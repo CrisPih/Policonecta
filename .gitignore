@@ -1,0 +1,19 @@
+# React / Node
+frontend/node_modules/
+frontend/dist/
+
+# PHP
+backend/vendor/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+
+# Operating System
+.DS_Store
+Thumbs.db

@@ -1,0 +1,62 @@
+:root {
+  --pc-azul: #1e40af;
+  --pc-azul-oscuro: #0b2a5b;
+  --pc-fondo: #f3f6fb;
+  --pc-texto: #0f1f3d;
+
+  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
+  color: var(--pc-texto);
+  background: var(--pc-fondo);
+  color-scheme: light;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  margin: 0;
+  background: var(--pc-fondo);
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--pc-azul);
+  outline-offset: 2px;
+}
+
+/* Telefonos: margenes de 16px y navegacion desplazable */
+@media (max-width: 767px) {
+  .pc-gutter {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .pc-header {
+    flex-wrap: wrap;
+    padding: 10px 16px !important;
+    gap: 8px !important;
+  }
+
+  .pc-nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    gap: 18px !important;
+  }
+
+  .pc-solo-web {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .pc-solo-movil {
+    display: none !important;
+  }
+}
