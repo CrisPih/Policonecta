@@ -34,7 +34,7 @@ export default function FeaturedCarousel({ onSelect }) {
             aria-label="Publicaciones destacadas"
             onMouseEnter={() => setPausado(true)}
             onMouseLeave={() => setPausado(false)}
-            style={{ maxWidth: 1280, margin: '0 auto', padding: '28px 40px 0', boxSizing: 'border-box' }}
+            style={{ maxWidth: 1040, margin: '0 auto', padding: '32px 40px 40px', boxSizing: 'border-box' }}
             className="pc-gutter"
         >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
@@ -49,7 +49,7 @@ export default function FeaturedCarousel({ onSelect }) {
                     position: 'relative',
                     borderRadius: 8,
                     overflow: 'hidden',
-                    minHeight: 260,
+                    minHeight: 340,
                     background: '#0b2a5b',
                     display: 'flex',
                     alignItems: 'flex-end',
@@ -70,7 +70,7 @@ export default function FeaturedCarousel({ onSelect }) {
                     }}
                 />
 
-                <div style={{ position: 'relative', padding: '28px 60px', maxWidth: 620, color: '#fff', boxSizing: 'border-box' }}>
+                <div style={{ position: 'relative', padding: '32px 64px', maxWidth: 620, color: '#fff', boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                         <Chip>{TIPOS[item.type] || 'Evento'}</Chip>
                         {item.faculty && <Chip>{item.faculty}</Chip>}
@@ -113,7 +113,7 @@ export default function FeaturedCarousel({ onSelect }) {
             </div>
 
             {items.length > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 14 }}>
                     {items.map((it, i) => (
                         <button
                             key={it.id}

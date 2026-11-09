@@ -108,18 +108,6 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
         {/* Encabezado y buscador */}
         <div className="pc-gutter" style={{ background: 'linear-gradient(135deg, #0b2a5b 0%, #1e40af 100%)', padding: '48px 40px 40px' }}>
             <div style={{ maxWidth: 1280, margin: '0 auto', textAlign: 'center' }}>
-            <div
-                style={{
-                fontSize: 11,
-                color: '#9fb6e0',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                marginBottom: 10,
-                fontFamily: 'JetBrains Mono, monospace',
-                }}
-            >
-                Escuela Superior Politécnica del Litoral
-            </div>
             <h1 style={{ margin: '0 0 6px', fontSize: 32, fontWeight: 700, color: '#fff', lineHeight: 1.2 }}>
                 {soloOportunidades ? 'Oportunidades' : 'PoliConecta'}
             </h1>
