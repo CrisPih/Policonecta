@@ -84,6 +84,7 @@ class ImageStorage
 
         $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $key,
+                'apikey' => $key,
                 'x-upsert' => 'true',
             ])
             ->withBody($contenido, $mime)
