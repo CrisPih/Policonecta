@@ -28,7 +28,7 @@ export default function RecommendedSection({ user, onSelect, onEditProfile }) {
     const hayMas = items.length > VISIBLES;
 
     return (
-        <section className="pc-gutter" style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 40px 0', boxSizing: 'border-box' }}>
+        <section className="pc-gutter" style={{ maxWidth: 1280, margin: '0 auto', padding: '8px 40px 36px', boxSizing: 'border-box' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 14, gap: 12, flexWrap: 'wrap' }}>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f1f3d' }}>Recomendados para usted</h2>
                 <button
@@ -56,8 +56,8 @@ export default function RecommendedSection({ user, onSelect, onEditProfile }) {
                     </div>
 
                     {esMovil && items.length > 1 && (
-                        <p style={{ margin: '6px 0 0', fontSize: 11, color: '#7a7a7a', textAlign: 'center' }}>
-                            Deslice para ver {items.length} recomendaciones
+                        <p style={{ margin: '10px 0 0', fontSize: 12, color: '#7a7a7a', textAlign: 'center' }}>
+                            Deslice horizontalmente para ver más recomendaciones
                         </p>
                     )}
 
