@@ -158,3 +158,12 @@ Los errores de conexion se ven en la consola del navegador con la tecla **F12**.
 
 Ambos servicios vuelven a desplegar solos con cada `git push` a la rama `main`. No hay que repetir
 la configuracion.
+
+Render no ejecuta las migraciones. Cuando un cambio agrega migraciones nuevas, se aplican a Supabase
+desde el equipo local, con el `.env` apuntando a Supabase:
+
+```bash
+php artisan migrate
+```
+
+No usar `migrate:fresh`, porque borra todos los datos.

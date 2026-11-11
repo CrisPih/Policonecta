@@ -11,6 +11,7 @@ import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import EventDetailPage from './pages/EventDetailPage';
+import AttendancePage from './pages/AttendancePage';
 import useEsMovil from './hooks/useEsMovil';
 
 // Paginas de gestion que solo se ofrecen en la version web
@@ -110,6 +111,8 @@ export default function App() {
         return <MyRegistrationsPage user={user} setCurrentPage={navigate} />;
       case 'organizer-dashboard':
         return <OrganizerDashboardPage user={user} setCurrentPage={navigate} />;
+      case 'attendance':
+        return <AttendancePage key={navParam ?? 'lista'} eventId={navParam} setCurrentPage={navigate} />;
       case 'create-event':
         return <CreateEventPage user={user} setCurrentPage={navigate} navigate={navigate} />;
       case 'edit-event':

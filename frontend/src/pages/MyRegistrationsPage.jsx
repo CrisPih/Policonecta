@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { registrationService } from '../services/registrationService';
+import QrCredential from '../components/QrCredential';
+import RatingForm from '../components/RatingForm';
 
 // Consulta y cancelación de las inscripciones del participante -- Cristina Pihuave
 export default function MyRegistrationsPage({ user, setCurrentPage }) {
@@ -10,6 +12,10 @@ export default function MyRegistrationsPage({ user, setCurrentPage }) {
     const [error, setError] = useState(null);
     const [message, setMessage] = useState(null);
     const [cancelingId, setCancelingId] = useState(null);
+    // Panel desplegado por inscripcion: 'qr' o 'valorar'
+    const [abierto, setAbierto] = useState({ id: null, panel: null });
+
+    const alternar = (id, panel) => setAbierto((a) => (a.id === id && a.panel === panel ? { id: null, panel: null } : { id, panel }));
 
     // Consulta las inscripciones asociadas al correo
     const fetchRegistrations = async (correo) => {
@@ -59,7 +65,7 @@ export default function MyRegistrationsPage({ user, setCurrentPage }) {
 
     const formatDate = (dateStr) => {
         if (!dateStr) return 'Fecha por confirmar';
-        const [year, month, day] = dateStr.split('-');
+        const [year, month, day] = dateStr.slice(0, 10).split('-');
         const meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
             'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
         return `${parseInt(day, 10)} de ${meses[parseInt(month, 10) - 1]} de ${year}`;
@@ -110,39 +116,81 @@ export default function MyRegistrationsPage({ user, setCurrentPage }) {
                 {!loading && registrations.length > 0 && (
                     <div style={{ display: 'grid', gap: 12 }}>
                         {registrations.map((r) => (
-                            <div key={r.id} style={{ ...cardStyle, padding: '18px 20px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                            <div key={r.id} style={cardStyle}>
+                            <div style={{ padding: '18px 20px', display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                                 <div style={{ flex: 1, minWidth: 240 }}>
                                     <h3 style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 600, color: '#0f1f3d' }}>
                                         {r.event?.title || 'Evento no disponible'}
                                     </h3>
                                     <div style={{ fontSize: 12, color: '#7a7a7a', marginBottom: 3 }}>
-                                        {formatDate(r.event?.date)}
+                                        {formatDate(r.event?.start_date)}
                                         {r.event?.start_time ? ` - ${r.event.start_time.slice(0, 5)}` : ''}
                                     </div>
                                     <div style={{ fontSize: 12, color: '#7a7a7a' }}>
                                         {r.event?.location || 'Ubicación por confirmar'}
                                     </div>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                                        {r.attended_at && <span style={okBadge}>Asistencia registrada</span>}
+                                        {r.payment && (
+                                            <span style={infoBadge}>
+                                                Entrada pagada ${Number(r.payment.amount).toFixed(2)} - {r.payment.reference}
+                                            </span>
+                                        )}
+                                        {r.rated && <span style={infoBadge}>Valorado</span>}
+                                    </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: 8 }}>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                                    {r.qr_content && !r.attended_at && (
+                                        <button onClick={() => alternar(r.id, 'qr')} style={primaryBtn}>
+                                            {abierto.id === r.id && abierto.panel === 'qr' ? 'Ocultar credencial' : 'Credencial QR'}
+                                        </button>
+                                    )}
+                                    {r.attended_at && !r.rated && (
+                                        <button onClick={() => alternar(r.id, 'valorar')} style={primaryBtn}>
+                                            Valorar
+                                        </button>
+                                    )}
                                     <button
                                         onClick={() => setCurrentPage('event-detail', r.event_id)}
                                         style={secondaryBtn}
                                     >
                                         Ver evento
                                     </button>
-                                    <button
-                                        onClick={() => handleCancel(r)}
-                                        disabled={cancelingId === r.id}
-                                        style={{
-                                            ...dangerBtn,
-                                            opacity: cancelingId === r.id ? 0.6 : 1,
-                                            cursor: cancelingId === r.id ? 'not-allowed' : 'pointer',
-                                        }}
-                                    >
-                                        {cancelingId === r.id ? 'Cancelando...' : 'Cancelar'}
-                                    </button>
+                                    {!r.attended_at && (
+                                        <button
+                                            onClick={() => handleCancel(r)}
+                                            disabled={cancelingId === r.id}
+                                            style={{
+                                                ...dangerBtn,
+                                                opacity: cancelingId === r.id ? 0.6 : 1,
+                                                cursor: cancelingId === r.id ? 'not-allowed' : 'pointer',
+                                            }}
+                                        >
+                                            {cancelingId === r.id ? 'Cancelando...' : 'Cancelar'}
+                                        </button>
+                                    )}
                                 </div>
+                            </div>
+
+                            {abierto.id === r.id && abierto.panel === 'qr' && (
+                                <div style={{ borderTop: '1px solid #e5e5e5', padding: '18px 20px', background: '#fafbfd' }}>
+                                    <QrCredential content={r.qr_content} token={r.qr_token} name={r.name} title={r.event?.title} />
+                                </div>
+                            )}
+
+                            {abierto.id === r.id && abierto.panel === 'valorar' && (
+                                <div style={{ borderTop: '1px solid #e5e5e5', padding: '18px 20px', background: '#fafbfd' }}>
+                                    <RatingForm
+                                        eventId={r.event_id}
+                                        onDone={() => {
+                                            setRegistrations((lista) => lista.map((x) => (x.id === r.id ? { ...x, rated: true } : x)));
+                                            setAbierto({ id: null, panel: null });
+                                            setMessage('Gracias por su valoración.');
+                                        }}
+                                    />
+                                </div>
+                            )}
                             </div>
                         ))}
                     </div>
@@ -156,6 +204,24 @@ const cardStyle = {
     background: '#fff',
     border: '1px solid #d4d4d4',
     borderRadius: 4,
+};
+
+const okBadge = {
+    background: '#fff',
+    color: '#3b4a66',
+    borderRadius: 4,
+    padding: '2px 8px',
+    fontSize: 11,
+    fontWeight: 600,
+};
+
+const infoBadge = {
+    background: '#e0e9fb',
+    color: '#1e40af',
+    borderRadius: 4,
+    padding: '2px 8px',
+    fontSize: 11,
+    fontWeight: 600,
 };
 
 const inputStyle = {
@@ -181,7 +247,6 @@ const primaryBtn = {
     fontWeight: 600,
     cursor: 'pointer',
     fontFamily: 'inherit',
-    letterSpacing: '0.03em',
 };
 
 const secondaryBtn = {
@@ -198,8 +263,8 @@ const secondaryBtn = {
 
 const dangerBtn = {
     background: 'none',
-    color: '#a94442',
-    border: '1px solid #e0b4b4',
+    color: '#3b4a66',
+    border: '1px solid #d4d4d4',
     borderRadius: 4,
     padding: '8px 14px',
     fontSize: 12,
@@ -208,9 +273,9 @@ const dangerBtn = {
 };
 
 const successStyle = {
-    background: '#edf7ed',
-    color: '#1e4620',
-    border: '1px solid #c3e6cb',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '11px 14px',
     borderRadius: 4,
     fontSize: 13,
@@ -219,9 +284,9 @@ const successStyle = {
 };
 
 const errorStyle = {
-    background: '#fdecea',
-    color: '#611a15',
-    border: '1px solid #f5c6cb',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '11px 14px',
     borderRadius: 4,
     fontSize: 13,

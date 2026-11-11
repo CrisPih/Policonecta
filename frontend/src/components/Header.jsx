@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import NotificationBell from './NotificationBell';
 
 export default function Header({
     currentPage,
@@ -88,7 +89,7 @@ export default function Header({
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#0f1f3d', lineHeight: 1.1 }}>
                 PoliConecta
                 </div>
-                <div style={{ fontSize: 9, color: '#5b6b88', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 9, color: '#5b6b88', }}>
                 Comunidad ESPOL
                 </div>
             </div>
@@ -160,6 +161,17 @@ export default function Header({
                 </button>
                 </span>
             )}
+
+            {/* En el telefono el organizador solo registra asistencia */}
+            {isLoggedIn && role === 'organizer' && (
+                <button
+                    className="pc-solo-movil"
+                    onClick={() => setCurrentPage('attendance')}
+                    style={navBtnStyle(currentPage === 'attendance')}
+                >
+                    Asistencia
+                </button>
+            )}
             </nav>
 
     {/* ÁREA DERECHA: AUTENTICACIÓN / DATOS DINÁMICOS DEL USUARIO */}
@@ -199,6 +211,8 @@ export default function Header({
                 </>
             ) : (
                 /* MENÚ DEL USUARIO/ORGANIZADOR AUTENTICADO */
+            <>
+            <NotificationBell setCurrentPage={setCurrentPage} />
             <div style={{ position: 'relative' }}>
                 <div
                     onClick={() => setShowUserMenu(!showUserMenu)}
@@ -260,13 +274,14 @@ export default function Header({
                     </button>
                     <button
                         onClick={handleLogoutClick}
-                        style={{ ...dropdownItemStyle, color: '#dc2626', borderTop: '1px solid #f0f0f0' }}
+                        style={{ ...dropdownItemStyle, color: '#1e40af', borderTop: '1px solid #f0f0f0' }}
                     >
                         Cerrar sesión
                     </button>
                     </div>
                 )}
                 </div>
+            </>
             )}
             </div>
         </div>

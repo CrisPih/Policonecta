@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { eventService } from '../services/eventService';
 import { registrationService } from '../services/registrationService';
+import FeatureModal from '../components/FeatureModal';
+import OrganizerStats from '../components/OrganizerStats';
 
 // -- Cristina Pihuave
 // Panel del organizador: edición, eliminación y participantes
@@ -11,6 +13,8 @@ export default function OrganizerDashboardPage({ setCurrentPage }) {
     const [error, setError] = useState(null);
     const [message, setMessage] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
+    const [pestana, setPestana] = useState('publicaciones');
+    const [destacando, setDestacando] = useState(null);
 
     // Evento cuyo listado de participantes está desplegado
     const [openId, setOpenId] = useState(null);
@@ -127,9 +131,13 @@ export default function OrganizerDashboardPage({ setCurrentPage }) {
 
     const formatDate = (dateStr) => {
         if (!dateStr) return 'Sin fecha';
-        const [year, month, day] = dateStr.split('-');
+        const [year, month, day] = dateStr.slice(0, 10).split('-');
         return `${day}/${month}/${year}`;
     };
+
+    const hoy = new Date().toISOString().slice(0, 10);
+    const destacadoVigente = (e) => e.is_featured && (!e.featured_until || e.featured_until.slice(0, 10) >= hoy);
+    const finalizada = (e) => ((e.deadline || e.end_date || e.start_date || '').slice(0, 10) || hoy) < hoy;
 
     // Clasificación estricta de borradores y publicados
     const draftEvents = events.filter((e) => e.status === 'draft');
@@ -150,13 +158,19 @@ export default function OrganizerDashboardPage({ setCurrentPage }) {
                             <span style={isDraft ? draftBadgeStyle : publishedBadgeStyle}>
                                 {isDraft ? 'Borrador' : 'Publicado'}
                             </span>
+                            {destacadoVigente(event) && (
+                                <span style={featuredBadgeStyle}>
+                                    Destacado{event.featured_until ? ` hasta ${formatDate(event.featured_until)}` : ''}
+                                </span>
+                            )}
                         </div>
                         
                         <div style={{ fontSize: 12, color: '#7a7a7a' }}>
                             {formatDate(event.start_date || event.date)} - {event.location || 'Ubicación no especificada'} - {event.faculty || 'Sin facultad'}
                         </div>
                         <div style={{ fontSize: 12, color: '#9a9a9a', marginTop: 3 }}>
-                            Capacidad: {event.max_participants || 0} participantes
+                            {event.max_participants ? `Capacidad: ${event.max_participants} participantes` : 'Sin límite de cupos'}
+                            {Number(event.price) > 0 ? ` - Entrada: $${Number(event.price).toFixed(2)}` : ''}
                         </div>
                     </div>
 
@@ -164,6 +178,16 @@ export default function OrganizerDashboardPage({ setCurrentPage }) {
                         {!isDraft && (
                             <button onClick={() => toggleParticipants(event.id)} style={secondaryBtn}>
                                 {openId === event.id ? 'Ocultar' : 'Participantes'}
+                            </button>
+                        )}
+                        {!isDraft && (event.type ?? 'evento') === 'evento' && (
+                            <button onClick={() => setCurrentPage('attendance', event.id)} style={secondaryBtn}>
+                                Asistencia
+                            </button>
+                        )}
+                        {!isDraft && !finalizada(event) && (
+                            <button onClick={() => setDestacando(event)} style={featureBtn}>
+                                {destacadoVigente(event) ? 'Extender destacado' : 'Destacar'}
                             </button>
                         )}
                         <button onClick={() => setCurrentPage('event-detail', event.id)} style={secondaryBtn}>
@@ -201,6 +225,7 @@ export default function OrganizerDashboardPage({ setCurrentPage }) {
                                     <tr>
                                         <th style={thStyle}>Nombre</th>
                                         <th style={thStyle}>Correo</th>
+                                        <th style={thStyle}>Asistencia</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -208,6 +233,7 @@ export default function OrganizerDashboardPage({ setCurrentPage }) {
                                         <tr key={p.id || p.email}>
                                             <td style={tdStyle}>{p.name}</td>
                                             <td style={tdStyle}>{p.email}</td>
+                                            <td style={tdStyle}>{p.attended_at ? 'Registrada' : 'Pendiente'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -237,16 +263,52 @@ export default function OrganizerDashboardPage({ setCurrentPage }) {
                     </button>
                 </div>
 
+                <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #d4d4d4', marginBottom: 22 }}>
+                    {[['publicaciones', 'Publicaciones'], ['estadisticas', 'Estadísticas']].map(([clave, texto]) => (
+                        <button
+                            key={clave}
+                            onClick={() => setPestana(clave)}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                borderBottom: pestana === clave ? '2px solid #1e40af' : '2px solid transparent',
+                                color: pestana === clave ? '#1e40af' : '#5a5a5a',
+                                fontWeight: pestana === clave ? 700 : 500,
+                                padding: '10px 14px',
+                                fontSize: 13,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                marginBottom: -1,
+                            }}
+                        >
+                            {texto}
+                        </button>
+                    ))}
+                </div>
+
                 {message && <div style={successStyle}>{message}</div>}
                 {error && <div style={errorStyle}>{error}</div>}
 
-                {loading && (
+                {pestana === 'estadisticas' && <OrganizerStats />}
+
+                {destacando && (
+                    <FeatureModal
+                        event={destacando}
+                        onClose={() => setDestacando(null)}
+                        onDone={() => {
+                            setMessage(`"${destacando.title}" aparece en el carrusel de destacados.`);
+                            fetchEvents();
+                        }}
+                    />
+                )}
+
+                {pestana === 'publicaciones' && loading && (
                     <div style={{ textAlign: 'center', padding: '60px 0', color: '#7a7a7a', fontSize: 14 }}>
                         Cargando publicaciones...
                     </div>
                 )}
 
-                {!loading && events.length === 0 && !error && (
+                {pestana === 'publicaciones' && !loading && events.length === 0 && !error && (
                     <div style={emptyStyle}>
                         <p style={{ fontSize: 14, color: '#7a7a7a', margin: 0 }}>
                             Sin publicaciones
@@ -254,7 +316,7 @@ export default function OrganizerDashboardPage({ setCurrentPage }) {
                     </div>
                 )}
 
-                {!loading && events.length > 0 && (
+                {pestana === 'publicaciones' && !loading && events.length > 0 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
 
                         {/* SECCIÓN 1: BORRADORES */}
@@ -310,7 +372,6 @@ const sectionTitleStyle = {
     fontSize: 16,
     fontWeight: 700,
     color: '#1e40af',
-    letterSpacing: '-0.01em',
 };
 
 const countBadgeStyle = {
@@ -323,25 +384,33 @@ const countBadgeStyle = {
 };
 
 const draftBadgeStyle = {
-    background: '#fff3cd',
-    color: '#856404',
-    border: '1px solid #ffeeba',
+    background: '#fff',
+    color: '#3b4a66',
+    border: '1px solid #d4d4d4',
     borderRadius: 4,
     padding: '2px 6px',
     fontSize: 10,
     fontWeight: 600,
-    textTransform: 'uppercase',
 };
 
 const publishedBadgeStyle = {
-    background: '#d4edda',
-    color: '#155724',
-    border: '1px solid #c3e6cb',
+    background: '#fff',
+    color: '#3b4a66',
+    border: '1px solid #d4d4d4',
     borderRadius: 4,
     padding: '2px 6px',
     fontSize: 10,
     fontWeight: 600,
-    textTransform: 'uppercase',
+};
+
+const featuredBadgeStyle = {
+    background: '#e0e9fb',
+    color: '#1e40af',
+    border: '1px solid #b9c9ea',
+    borderRadius: 4,
+    padding: '2px 6px',
+    fontSize: 10,
+    fontWeight: 600,
 };
 
 const dividerContainerStyle = {
@@ -373,7 +442,6 @@ const primaryBtn = {
     fontWeight: 600,
     cursor: 'pointer',
     fontFamily: 'inherit',
-    letterSpacing: '0.03em',
 };
 
 const secondaryBtn = {
@@ -388,10 +456,22 @@ const secondaryBtn = {
     fontFamily: 'inherit',
 };
 
+const featureBtn = {
+    background: '#1e40af',
+    color: '#fff',
+    border: '1px solid #1e40af',
+    borderRadius: 4,
+    padding: '8px 14px',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+};
+
 const dangerBtn = {
     background: 'none',
-    color: '#a94442',
-    border: '1px solid #e0b4b4',
+    color: '#3b4a66',
+    border: '1px solid #d4d4d4',
     borderRadius: 4,
     padding: '8px 14px',
     fontSize: 12,
@@ -404,9 +484,7 @@ const thStyle = {
     padding: '6px 8px',
     color: '#9a9a9a',
     fontWeight: 600,
-    textTransform: 'uppercase',
     fontSize: 10,
-    letterSpacing: '0.06em',
     borderBottom: '1px solid #e5e5e5',
 };
 
@@ -417,9 +495,9 @@ const tdStyle = {
 };
 
 const successStyle = {
-    background: '#edf7ed',
-    color: '#1e4620',
-    border: '1px solid #c3e6cb',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '11px 14px',
     borderRadius: 4,
     fontSize: 13,
@@ -428,9 +506,9 @@ const successStyle = {
 };
 
 const errorStyle = {
-    background: '#fdecea',
-    color: '#611a15',
-    border: '1px solid #f5c6cb',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '11px 14px',
     borderRadius: 4,
     fontSize: 13,

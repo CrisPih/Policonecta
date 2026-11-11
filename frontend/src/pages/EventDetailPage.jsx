@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import ImagePlaceholder from '../components/ImagePlaceholder';
 import { eventService } from '../services/eventService';
 import { registrationService } from '../services/registrationService';
+import PaymentModal from '../components/PaymentModal';
 import { estadoEvento, descargarICS, esOportunidad, fechaLarga, TIPOS } from '../utils/eventDates';
 
 // Detalle de un evento e inscripción de participantes -- Cristina Pihuave
@@ -23,6 +24,17 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
     // Inscripción existente del usuario en este evento
     const [miInscripcion, setMiInscripcion] = useState(null);
     const [copiado, setCopiado] = useState(false);
+    const [valoracion, setValoracion] = useState({ average: null, count: 0 });
+    const [pagando, setPagando] = useState(false);
+    const [cuponEntrada, setCuponEntrada] = useState(null);
+
+    // Cupon de entrada gratis disponible del participante
+    useEffect(() => {
+        if (!user || user.role === 'organizer') return;
+        eventService.getRewards()
+            .then((d) => setCuponEntrada((d.coupons ?? []).find((c) => c.reward === 'entrada' && c.status === 'disponible') ?? null))
+            .catch(() => {});
+    }, [user, miInscripcion]);
 
     // Carga el detalle del evento desde la API
     const fetchEvent = async () => {
@@ -32,6 +44,7 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
             setEvent(data.event);
             setRegistered(data.registered_participants);
             setAvailable(data.available_spots);
+            setValoracion({ average: data.rating_average ?? null, count: data.rating_count ?? 0 });
             setError(null);
         } catch (err) {
             console.error('Error al cargar el evento:', err);
@@ -113,7 +126,6 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
         }
     };
 
-    const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
     // Envía la inscripción al backend
     const handleSubmit = async (e) => {
@@ -123,6 +135,12 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
 
         if (!form.name.trim() || !form.email.trim()) {
             setFormError('Ingrese su nombre y correo para inscribirse.');
+            return;
+        }
+
+        // Las entradas con precio se pagan antes de confirmar el cupo
+        if (Number(event.price) > 0) {
+            setPagando(true);
             return;
         }
 
@@ -141,6 +159,40 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
         } finally {
             setSending(false);
         }
+    };
+
+    // Inscripcion con el cupon de entrada gratis obtenido con puntos
+    const usarCupon = async () => {
+        setFormError(null);
+        try {
+            setSending(true);
+            const data = await registrationService.register(event.id, {
+                name: form.name.trim(),
+                email: form.email.trim(),
+                coupon_code: cuponEntrada.code,
+            });
+            setSuccess(data.message);
+            setAvailable(data.available_spots);
+            setRegistered((n) => n + 1);
+            setCuponEntrada(null);
+        } catch (err) {
+            setFormError(err.message);
+        } finally {
+            setSending(false);
+        }
+    };
+
+    // Inscripcion con pago de la entrada
+    const pagarEntrada = async (tarjeta) => {
+        const data = await registrationService.register(event.id, {
+            name: form.name.trim(),
+            email: form.email.trim(),
+            ...tarjeta,
+        });
+        setSuccess(data.message);
+        setAvailable(data.available_spots);
+        setRegistered((n) => n + 1);
+        return data;
     };
 
     // Formatea fechas locales para evitar desfases de zona horaria.
@@ -181,7 +233,7 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
     if (error || !event) {
         return (
             <div style={{ minHeight: '100vh', background: '#f3f6fb', padding: '80px 40px', textAlign: 'center' }}>
-                <p style={{ color: '#d9534f', fontSize: 14, marginBottom: 20 }}>{error || 'Evento no encontrado.'}</p>
+                <p style={{ color: '#3b4a66', fontSize: 14, marginBottom: 20 }}>{error || 'Evento no encontrado.'}</p>
                 <button onClick={() => setCurrentPage('home')} style={primaryBtn}>
                     Volver al inicio
                 </button>
@@ -196,6 +248,7 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
     const oportunidad = esOportunidad(event);
     const estado = estadoEvento(event);
     const finalizado = estado.clave === 'finalizado';
+    const precio = Number(event.price) || 0;
 
     return (
         <div style={{ minHeight: '100vh', background: '#f3f6fb' }}>
@@ -245,8 +298,6 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
                                         fontWeight: 700,
                                         padding: '3px 8px',
                                         borderRadius: 3,
-                                        textTransform: 'uppercase',
-                                        letterSpacing: '0.06em',
                                     }}
                                 >
                                     {estado.texto}
@@ -267,6 +318,13 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
                                 <InfoRow label="Organiza" value={event.faculty} />
                                 {event.deadline && <InfoRow label="Fecha límite" value={fechaLarga(event.deadline)} />}
                                 {event.sponsor && <InfoRow label="Patrocina" value={event.sponsor} />}
+                                {!oportunidad && <InfoRow label="Entrada" value={precio > 0 ? `$${precio.toFixed(2)}` : 'Gratuita'} />}
+                                {valoracion.count > 0 && (
+                                    <InfoRow
+                                        label="Valoración"
+                                        value={`${valoracion.average} / 5 (${valoracion.count} ${valoracion.count === 1 ? 'valoración' : 'valoraciones'})`}
+                                    />
+                                )}
                             </div>
 
                             {event.external_link && (
@@ -345,20 +403,22 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
                             ) : miInscripcion ? (
                                 <div>
                                     <div style={successStyle}>
-                                        Su inscripción está registrada.
+                                        {miInscripcion.attended_at ? 'Su asistencia está registrada.' : 'Su inscripción está registrada.'}
                                     </div>
-                                    <button
-                                        onClick={handleCancelar}
-                                        disabled={sending}
-                                        style={{
-                                            ...dangerBtn,
-                                            width: '100%',
-                                            opacity: sending ? 0.6 : 1,
-                                            cursor: sending ? 'not-allowed' : 'pointer',
-                                        }}
-                                    >
-                                        {sending ? 'Cancelando...' : 'Cancelar mi participación'}
-                                    </button>
+                                    {!miInscripcion.attended_at && (
+                                        <button
+                                            onClick={handleCancelar}
+                                            disabled={sending}
+                                            style={{
+                                                ...dangerBtn,
+                                                width: '100%',
+                                                opacity: sending ? 0.6 : 1,
+                                                cursor: sending ? 'not-allowed' : 'pointer',
+                                            }}
+                                        >
+                                            {sending ? 'Cancelando...' : 'Cancelar mi participación'}
+                                        </button>
+                                    )}
                                 </div>
                             ) : sinCupos && !success ? (
                                 <p style={avisoStyle}>
@@ -366,26 +426,9 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
                                 </p>
                             ) : (
                                 <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                                    <Field label="Nombre completo">
-                                        <input
-                                            value={form.name}
-                                            onChange={set('name')}
-                                            placeholder="Nombre y apellido"
-                                            disabled={sending || !!success}
-                                            style={inputStyle}
-                                        />
-                                    </Field>
-
-                                    <Field label="Correo electrónico">
-                                        <input
-                                            type="email"
-                                            value={form.email}
-                                            onChange={set('email')}
-                                            placeholder="usuario@espol.edu.ec"
-                                            disabled={sending || !!success}
-                                            style={inputStyle}
-                                        />
-                                    </Field>
+                                    <p style={{ margin: 0, fontSize: 12, color: '#3b4a66', lineHeight: 1.5 }}>
+                                        Se inscribirá como <strong>{form.name}</strong> ({form.email}).
+                                    </p>
 
                                     <button
                                         type="submit"
@@ -397,9 +440,36 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
                                             cursor: sending || success ? 'not-allowed' : 'pointer',
                                         }}
                                     >
-                                        {sending ? 'Registrando...' : success ? 'Inscripción confirmada' : 'Inscribirme'}
+                                        {sending
+                                            ? 'Registrando...'
+                                            : success
+                                                ? 'Inscripción confirmada'
+                                                : precio > 0
+                                                    ? `Comprar entrada - $${precio.toFixed(2)}`
+                                                    : 'Inscribirme'}
                                     </button>
+
+                                    {precio > 0 && cuponEntrada && !success && (
+                                        <button
+                                            type="button"
+                                            onClick={usarCupon}
+                                            disabled={sending}
+                                            style={{ ...secondaryBtn, width: '100%', opacity: sending ? 0.6 : 1 }}
+                                        >
+                                            Usar cupón de entrada gratis ({cuponEntrada.code})
+                                        </button>
+                                    )}
                                 </form>
+                            )}
+
+                            {pagando && (
+                                <PaymentModal
+                                    title="Comprar entrada"
+                                    concept={`Entrada - ${event.title}`}
+                                    amount={precio}
+                                    onPay={pagarEntrada}
+                                    onClose={() => setPagando(false)}
+                                />
                             )}
 
                             {(success || miInscripcion) && (
@@ -453,15 +523,6 @@ function InfoRow({ label, value }) {
     );
 }
 
-function Field({ label, children }) {
-    return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label style={{ fontSize: 12, color: '#5a5a5a', fontWeight: 500 }}>{label}</label>
-            {children}
-        </div>
-    );
-}
-
 function Tag({ children }) {
     return (
         <span
@@ -472,8 +533,6 @@ function Tag({ children }) {
                 fontWeight: 600,
                 padding: '3px 8px',
                 borderRadius: 3,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
             }}
         >
             {children}
@@ -488,19 +547,6 @@ const cardStyle = {
     overflow: 'hidden',
 };
 
-const inputStyle = {
-    border: '1px solid #d4d4d4',
-    borderRadius: 4,
-    padding: '9px 11px',
-    fontSize: 13,
-    color: '#0f1f3d',
-    background: '#fff',
-    fontFamily: 'inherit',
-    outline: 'none',
-    width: '100%',
-    boxSizing: 'border-box',
-};
-
 const primaryBtn = {
     background: '#1e40af',
     color: '#fff',
@@ -511,7 +557,6 @@ const primaryBtn = {
     fontWeight: 600,
     cursor: 'pointer',
     fontFamily: 'inherit',
-    letterSpacing: '0.03em',
 };
 
 const secondaryBtn = {
@@ -528,8 +573,8 @@ const secondaryBtn = {
 
 const dangerBtn = {
     background: 'none',
-    color: '#a94442',
-    border: '1px solid #e0b4b4',
+    color: '#3b4a66',
+    border: '1px solid #d4d4d4',
     borderRadius: 4,
     padding: '10px 18px',
     fontSize: 12,
@@ -538,9 +583,9 @@ const dangerBtn = {
 };
 
 const successStyle = {
-    background: '#edf7ed',
-    color: '#1e4620',
-    border: '1px solid #c3e6cb',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '10px 12px',
     borderRadius: 4,
     fontSize: 12,
@@ -549,9 +594,9 @@ const successStyle = {
 };
 
 const errorStyle = {
-    background: '#fdecea',
-    color: '#611a15',
-    border: '1px solid #f5c6cb',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '10px 12px',
     borderRadius: 4,
     fontSize: 12,

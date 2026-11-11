@@ -242,7 +242,6 @@ const primaryBtn = {
     fontSize: 13,
     fontWeight: 600,
     fontFamily: 'inherit',
-    letterSpacing: '0.03em',
     marginTop: 4,
 };
 
@@ -259,9 +258,9 @@ const linkBtn = {
 };
 
 const successStyle = {
-    background: '#edf7ed',
-    color: '#1e4620',
-    border: '1px solid #c3e6cb',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '11px 14px',
     borderRadius: 4,
     fontSize: 13,
@@ -270,9 +269,9 @@ const successStyle = {
 };
 
 const errorStyle = {
-    background: '#fdecea',
-    color: '#611a15',
-    border: '1px solid #f5c6cb',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '11px 14px',
     borderRadius: 4,
     fontSize: 13,

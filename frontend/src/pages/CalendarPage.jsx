@@ -111,7 +111,7 @@ export default function CalendarPage({ setCurrentPage }) {
                             {/* Nombres de los días */}
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 6, marginBottom: 6 }}>
                                 {DIAS.map((d) => (
-                                    <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#9a9a9a', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                    <div key={d} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: '#9a9a9a', }}>
                                         {d}
                                     </div>
                                 ))}
@@ -202,7 +202,7 @@ export default function CalendarPage({ setCurrentPage }) {
                                                     <h3 style={{ margin: 0, fontSize: 14, fontWeight: 600, color: '#0f1f3d' }}>
                                                         {e.title}
                                                     </h3>
-                                                    <span style={{ fontSize: 10, fontWeight: 700, color: estado.color, textTransform: 'uppercase' }}>
+                                                    <span style={{ fontSize: 10, fontWeight: 700, color: estado.color, }}>
                                                         {estado.texto}
                                                     </span>
                                                 </div>

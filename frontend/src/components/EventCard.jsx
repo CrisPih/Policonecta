@@ -112,8 +112,6 @@ export default function EventCard({ event, onSelect, reasons = [] }) {
                         fontWeight: 700,
                         padding: '4px 9px',
                         borderRadius: 3,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.06em',
                         border: `1px solid ${estado.color}33`,
                     }}
                 >
@@ -127,6 +125,7 @@ export default function EventCard({ event, onSelect, reasons = [] }) {
                     {oportunidad && <Tag destacado>{TIPOS[event.type]}</Tag>}
                     {event?.faculty && <Tag>{event.faculty}</Tag>}
                     {event?.category && <Tag>{event.category}</Tag>}
+                    {Number(event?.price) > 0 && <Tag destacado>${Number(event.price).toFixed(2)}</Tag>}
                 </div>
 
                 {/* Título */}
@@ -199,7 +198,6 @@ export default function EventCard({ event, onSelect, reasons = [] }) {
                         cursor: 'pointer',
                         fontFamily: 'inherit',
                         width: '100%',
-                        letterSpacing: '0.03em',
                         transition: 'background 0.15s',
                     }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = '#1e3a8a')}
@@ -222,8 +220,6 @@ function Tag({ children, destacado = false }) {
                 fontWeight: 600,
                 padding: '3px 8px',
                 borderRadius: 3,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
             }}
         >
             {children}

@@ -36,8 +36,7 @@ export default function ImagePlaceholder({
             style={{
             fontSize: 11,
             color: '#a0a0a0',
-            fontFamily: 'JetBrains Mono, monospace',
-            letterSpacing: '0.03em',
+            fontFamily: 'inherit',
             }}
         >
             {label}

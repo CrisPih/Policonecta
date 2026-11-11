@@ -187,9 +187,9 @@ const buttonStyle = {
 };
 
 const errorStyle = {
-    background: '#fdeded',
-    color: '#5f2120',
-    border: '1px solid #f5c2c2',
+    background: '#fff',
+    color: '#0f1f3d',
+    border: '1px solid #d4d4d4',
     padding: '10px 14px',
     borderRadius: 4,
     fontSize: 12,

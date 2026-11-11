@@ -208,8 +208,6 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
                 fontSize: 12,
                 fontWeight: 600,
                 color: '#7a7a7a',
-                textTransform: 'uppercase',
-                letterSpacing: '0.07em',
                 marginRight: 4,
                 }}
             >
@@ -333,7 +331,7 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
             )}
 
             {error && (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: '#d9534f', fontSize: 14 }}>
+            <div style={{ textAlign: 'center', padding: '60px 0', color: '#3b4a66', fontSize: 14 }}>
                 {error}
             </div>
             )}
@@ -448,7 +446,6 @@ function SortBtn({ children, active, onClick }) {
             fontWeight: active ? 600 : 400,
             cursor: 'pointer',
             fontFamily: 'inherit',
-            letterSpacing: '0.02em',
             transition: 'all 0.15s ease',
         }}
         >

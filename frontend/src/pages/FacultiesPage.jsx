@@ -99,5 +99,4 @@ const badgeStyle = {
     fontWeight: 700,
     padding: '4px 10px',
     borderRadius: 3,
-    letterSpacing: '0.06em',
 };

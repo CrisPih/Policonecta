@@ -35,17 +35,44 @@ Proyecto de la materia Sistemas de la Información, paralelo 2, PAO 2 2026. Prof
 | Módulo | Descripción |
 |---|---|
 | Portal centralizado | Eventos, pasantías, becas, investigación y convocatorias en un mismo catálogo. |
-| Carrusel de destacados | Publicaciones patrocinadas que se muestran en el inicio hasta la fecha indicada. |
-| Motor de recomendaciones | Ordena las publicaciones según facultad, intereses, historial de asistencia y fechas límite. |
+| Carrusel de destacados | Publicaciones patrocinadas por un plan pagado de 7, 15 o 30 días. |
+| Motor de recomendaciones | Ordena las publicaciones según facultad, carrera, intereses, historial de asistencia y fechas límite. |
 | Oportunidades | Sección propia con fecha límite de postulación y enlace externo. |
 | Buscador con filtros | Búsqueda por palabras clave y filtros por tipo, facultad, categoría y fecha. |
-| Inscripciones | Registro en un paso, control de cupos y cancelación. |
+| Inscripciones | Registro en un paso con los datos del perfil, control de cupos y cancelación. |
+| Entradas pagadas | Eventos con precio; el pago se confirma antes de reservar el cupo y se reembolsa al cancelar. |
+| Asistencia por QR | Credencial con código QR por inscripción, leída con la cámara en la entrada del evento. |
+| Programa de puntos | 10 puntos por cada asistencia registrada, canjeables por recompensas. |
+
+### Recompensas
+
+El canje es una simulación: genera un cupón con código y descuenta los puntos.
+
+| Recompensa | Puntos | Uso del cupón |
+|---|---|---|
+| 10 % de descuento en ESPOL Shop | 30 | Se presenta el código en la tienda |
+| Comida gratis en un bar del campus | 20 | Se presenta el código en el bar |
+| Entrada gratis a un evento pagado | 50 | Se aplica al comprar la entrada y el total queda en $0 |
+| Valoración de eventos | Calificación de 1 a 5 y comentario de quienes asistieron. |
+| Avisos | Publicaciones afines al perfil, recordatorios de eventos, cierres de postulación y valoraciones pendientes. |
 | Calendario | Vista mensual y descarga del evento para Google Calendar u Outlook. |
-| Panel del organizador | Creación, edición, borradores y lista de inscritos. |
+| Panel del organizador | Creación, edición, borradores, inscritos, aviso de cruce de horarios y publicación destacada. |
+| Tablero de métricas | Inscripción, asistencia, valoración e ingresos por publicación, facultad y carrera, con exportación a CSV. |
+
+### Pagos simulados
+
+Los pagos de entradas y de publicaciones destacadas usan una pasarela simulada que no se conecta a ningún banco ni guarda el número de la tarjeta.
+
+| Tarjeta | Resultado |
+|---|---|
+| `4242 4242 4242 4242` | Pago aprobado |
+| `4000 0000 0000 0002` | Pago rechazado |
+
+Cualquier fecha de vencimiento futura y cualquier CVV de 3 dígitos son válidos.
 
 ### Versión web y versión móvil
 
-La versión web ofrece todas las funciones. En pantallas de teléfono la plataforma se limita a consultar publicaciones, inscribirse y revisar el perfil; la creación y gestión de publicaciones solo está disponible en la versión web.
+La versión web ofrece todas las funciones. En pantallas de teléfono el participante consulta publicaciones, se inscribe, muestra su credencial QR y revisa su perfil, y el organizador registra la asistencia con la cámara. La creación y gestión de publicaciones solo está disponible en la versión web.
 
 ### Roles
 
@@ -124,6 +151,8 @@ El comando `php artisan migrate --seed` crea dos cuentas y publicaciones de ejem
 | Organizador | `organizador@policonecta.test` | `policonecta123` |
 | Participante | `estudiante@policonecta.test` | `policonecta123` |
 
+El participante de prueba empieza con 60 puntos para demostrar el canje.
+
 ---
 
 ## Pruebas
@@ -148,6 +177,9 @@ Ruta base `/api`. La colección de Postman está en [docs/postman/PoliConecta.po
 | `POST` | `/login` | Iniciar sesión | No |
 | `GET` | `/events` | Listar, buscar y filtrar (`search`, `type`, `kind`, `faculty`, `category`, `date`) | No |
 | `GET` | `/events/featured` | Publicaciones destacadas vigentes | No |
+| `GET` | `/events/conflicts` | Eventos de la misma facultad en el mismo horario | No |
+| `GET` | `/featured-plans` | Planes de publicación destacada | No |
+| `GET` | `/events/{id}/ratings` | Valoraciones de un evento | No |
 | `GET` | `/events/{id}` | Detalle de una publicación | No |
 | `POST` | `/events` | Crear una publicación | Sí |
 | `PUT` / `PATCH` | `/events/{id}` | Actualizar una publicación | Sí |
@@ -155,6 +187,15 @@ Ruta base `/api`. La colección de Postman está en [docs/postman/PoliConecta.po
 | `GET` | `/profile` | Consultar el perfil | Sí |
 | `PUT` | `/profile` | Actualizar facultad, carrera e intereses | Sí |
 | `GET` | `/recommendations` | Recomendaciones personalizadas | Sí |
+| `POST` | `/events/{id}/feature` | Pagar un plan de publicación destacada | Sí |
+| `GET` | `/payments` | Historial de pagos | Sí |
+| `POST` | `/events/{id}/attendance` | Registrar asistencia con el código QR | Sí |
+| `POST` | `/events/{id}/ratings` | Valorar un evento al que se asistió | Sí |
+| `GET` | `/notifications` | Avisos del usuario | Sí |
+| `POST` | `/notifications/read` | Marcar los avisos como leídos | Sí |
+| `GET` | `/organizer/stats` | Métricas del organizador | Sí |
+| `GET` | `/rewards` | Puntos, catálogo de recompensas y cupones | Sí |
+| `POST` | `/rewards/{clave}/redeem` | Canjear puntos (`shop`, `bar` o `entrada`) | Sí |
 | `GET` | `/events/{id}/registrations` | Inscritos de una publicación | Sí |
 | `POST` | `/events/{id}/registrations` | Inscribirse | Sí |
 | `DELETE` | `/events/{id}/registrations/{id}` | Cancelar la inscripción | Sí |
@@ -177,7 +218,6 @@ Los pasos para publicar en Supabase, Render y Vercel están en [docs/DESPLIEGUE.
 Dependen de acuerdos con la ESPOL y no forman parte de esta versión:
 
 - Ingreso con la cuenta institucional (SSO de GTSI).
-- Asistencia por código QR y puntos canjeables.
-- Valoración de eventos por los asistentes.
-- Alerta de cruce de horarios entre eventos dirigidos al mismo público.
-- Notificaciones push y correo semanal de recomendaciones.
+- Acuerdos reales con ESPOL Shop y los bares del campus para validar los cupones.
+- Pasarela de pago real para entradas y publicaciones destacadas.
+- Aplicaciones nativas, notificaciones push y correo semanal de recomendaciones.

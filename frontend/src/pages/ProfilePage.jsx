@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { eventService } from '../services/eventService';
 import { FACULTADES, INTERESES } from '../data/catalogos';
+import RewardsPanel from '../components/RewardsPanel';
 
 // Perfil del usuario con sus datos de cuenta -- Dhamar Patiño
 
@@ -13,6 +14,20 @@ export default function ProfilePage({ user, role, onLogout, setCurrentPage, onUs
     const [interests, setInterests] = useState(user?.interests || []);
     const [guardando, setGuardando] = useState(false);
     const [aviso, setAviso] = useState(null);
+
+    // Historial de pagos
+    const [pagos, setPagos] = useState(null);
+
+    useEffect(() => {
+        if (!user) return;
+        eventService.getProfile()
+            .then((d) => {
+                if (onUserUpdate && d.user) onUserUpdate(d.user);
+            })
+            .catch(() => {});
+        eventService.getPayments().then(setPagos).catch(() => setPagos([]));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const alternarInteres = (valor) => {
         setInterests((lista) => (lista.includes(valor) ? lista.filter((i) => i !== valor) : [...lista, valor]));
@@ -87,6 +102,12 @@ export default function ProfilePage({ user, role, onLogout, setCurrentPage, onUs
                         <Dato label="Tipo de cuenta" valor={tipoCuenta} />
                     </div>
 
+                    {role !== 'organizer' && (
+                        <div style={{ borderTop: '1px solid #efefef', paddingTop: 18, marginBottom: 24 }}>
+                            <RewardsPanel />
+                        </div>
+                    )}
+
                     <div style={{ borderTop: '1px solid #efefef', paddingTop: 18, marginBottom: 24 }}>
                         <h2 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 700, color: '#0f1f3d' }}>Preferencias</h2>
                         <p style={{ margin: '0 0 14px', fontSize: 12, color: '#7a7a7a' }}>
@@ -139,9 +160,39 @@ export default function ProfilePage({ user, role, onLogout, setCurrentPage, onUs
                                 {guardando ? 'Guardando...' : 'Guardar preferencias'}
                             </button>
                             {aviso && (
-                                <span style={{ fontSize: 12, color: aviso.ok ? '#1e4620' : '#a94442' }}>{aviso.texto}</span>
+                                <span style={{ fontSize: 12, color: aviso.ok ? '#0f1f3d' : '#3b4a66' }}>{aviso.texto}</span>
                             )}
                         </div>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #efefef', paddingTop: 18, marginBottom: 24 }}>
+                        <h2 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: '#0f1f3d' }}>Historial de pagos</h2>
+                        {pagos === null ? (
+                            <p style={{ margin: 0, fontSize: 12, color: '#7a7a7a' }}>Cargando pagos...</p>
+                        ) : pagos.length === 0 ? (
+                            <p style={{ margin: 0, fontSize: 13, color: '#9a9a9a' }}>Sin pagos</p>
+                        ) : (
+                            <div style={{ display: 'grid', gap: 8 }}>
+                                {pagos.map((p) => (
+                                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 12, borderBottom: '1px solid #efefef', paddingBottom: 8, flexWrap: 'wrap' }}>
+                                        <div>
+                                            <div style={{ color: '#0f1f3d', fontWeight: 600 }}>
+                                                {p.concept === 'destacado' ? `Destacado ${p.plan_days} días` : 'Entrada'} - {p.event?.title ?? 'Publicación eliminada'}
+                                            </div>
+                                            <div style={{ color: '#7a7a7a' }}>
+                                                {(p.created_at || '').slice(0, 10)} - {p.reference} - {p.card_brand} {p.card_last4}
+                                            </div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div style={{ fontWeight: 700, color: '#0f1f3d' }}>${Number(p.amount).toFixed(2)}</div>
+                                            <div style={{ color: p.status === 'reembolsado' ? '#3b4a66' : '#0f1f3d' }}>
+                                                {p.status === 'reembolsado' ? 'Reembolsado' : 'Aprobado'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -251,8 +302,8 @@ const secondaryBtn = {
 
 const dangerBtn = {
     background: 'none',
-    color: '#a94442',
-    border: '1px solid #e0b4b4',
+    color: '#3b4a66',
+    border: '1px solid #d4d4d4',
     borderRadius: 4,
     padding: '9px 16px',
     fontSize: 12,

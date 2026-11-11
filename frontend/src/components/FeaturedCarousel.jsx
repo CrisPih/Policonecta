@@ -147,8 +147,6 @@ function Chip({ children }) {
                 fontWeight: 600,
                 padding: '3px 8px',
                 borderRadius: 3,
-                textTransform: 'uppercase',
-                letterSpacing: '0.06em',
             }}
         >
             {children}

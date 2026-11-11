@@ -20,6 +20,14 @@
     {
       "key": "registration_id",
       "value": "1"
+    },
+    {
+      "key": "qr_code",
+      "value": ""
+    },
+    {
+      "key": "coupon_code",
+      "value": ""
     }
   ],
   "item": [
@@ -430,7 +438,7 @@
           ]
         },
         {
-          "name": "Crear pasantia destacada",
+          "name": "Crear evento con entrada pagada",
           "request": {
             "method": "POST",
             "header": [
@@ -458,7 +466,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Pasantia en analitica de datos\",\n  \"description\": \"Pasantia de seis meses.\",\n  \"type\": \"pasantia\",\n  \"category\": \"Laboral\",\n  \"faculty\": \"FIEC\",\n  \"start_date\": \"2027-01-05\",\n  \"deadline\": \"2026-12-15\",\n  \"external_link\": \"https://www.espol.edu.ec\",\n  \"is_featured\": true,\n  \"featured_until\": \"2026-12-15\",\n  \"sponsor\": \"Empresa aliada\"\n}",
+              "raw": "{\n  \"title\": \"Taller de robotica avanzada\",\n  \"description\": \"Taller practico con certificado.\",\n  \"type\": \"evento\",\n  \"category\": \"Taller\",\n  \"modality\": \"Presencial\",\n  \"faculty\": \"FIEC\",\n  \"start_date\": \"2026-12-12\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"13:00\",\n  \"location\": \"Laboratorio de Robotica\",\n  \"max_participants\": 25,\n  \"price\": 12.5\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -478,6 +486,74 @@
               }
             }
           ]
+        },
+        {
+          "name": "Crear pasantia",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Pasantia en analitica de datos\",\n  \"description\": \"Pasantia de seis meses.\",\n  \"type\": \"pasantia\",\n  \"category\": \"Laboral\",\n  \"faculty\": \"FIEC\",\n  \"start_date\": \"2027-01-05\",\n  \"deadline\": \"2026-12-15\",\n  \"external_link\": \"https://www.espol.edu.ec\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json();",
+                  "if (datos.event) { pm.collectionVariables.set('event_id', datos.event.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revisar cruce de horarios",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events/conflicts?start_date=2026-12-10&start_time=11:00&end_time=12:30&faculty=FIEC"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
         },
         {
           "name": "Actualizar",
@@ -591,7 +667,59 @@
                 "type": "text/javascript",
                 "exec": [
                   "const datos = pm.response.json();",
-                  "if (datos.registration) { pm.collectionVariables.set('registration_id', datos.registration.id); }"
+                  "if (datos.registration) { pm.collectionVariables.set('registration_id', datos.registration.id); }",
+                  "if (datos.registration && datos.registration.qr_content) { pm.collectionVariables.set('qr_code', datos.registration.qr_content); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Comprar entrada",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/registrations"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Julio Cevallos\",\n  \"email\": \"estudiante@policonecta.test\",\n  \"card_name\": \"Julio Cevallos\",\n  \"card_number\": \"4242 4242 4242 4242\",\n  \"card_expiry\": \"12/30\",\n  \"card_cvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json();",
+                  "if (datos.registration) { pm.collectionVariables.set('registration_id', datos.registration.id); }",
+                  "if (datos.registration && datos.registration.qr_content) { pm.collectionVariables.set('qr_code', datos.registration.qr_content); }"
                 ]
               }
             }
@@ -659,6 +787,452 @@
             ],
             "url": {
               "raw": "{{base_url}}/events/{{event_id}}/registrations/{{registration_id}}"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pagos y destacados",
+      "item": [
+        {
+          "name": "Planes de destacado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/featured-plans"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Destacar publicacion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/feature"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_days\": 7,\n  \"sponsor\": \"Empresa aliada\",\n  \"card_name\": \"Julio Cevallos\",\n  \"card_number\": \"4242 4242 4242 4242\",\n  \"card_expiry\": \"12/30\",\n  \"card_cvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pago rechazado",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/feature"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"plan_days\": 7,\n  \"card_name\": \"Julio Cevallos\",\n  \"card_number\": \"4000 0000 0000 0002\",\n  \"card_expiry\": \"12/30\",\n  \"card_cvv\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Historial de pagos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/payments"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Asistencia y valoracion",
+      "item": [
+        {
+          "name": "Registrar asistencia (organizador)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/attendance"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{qr_code}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Valorar evento",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/ratings"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Muy util.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Valoraciones de un evento",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/ratings"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Recompensas",
+      "item": [
+        {
+          "name": "Puntos y recompensas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Canjear entrada gratis",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/entrada/redeem"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json();",
+                  "if (datos.coupon) { pm.collectionVariables.set('coupon_code', datos.coupon.code); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Canjear descuento en ESPOL Shop",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rewards/shop/redeem"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inscribirse con cupon",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events/{{event_id}}/registrations"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Julio Cevallos\",\n  \"email\": \"estudiante@policonecta.test\",\n  \"coupon_code\": \"{{coupon_code}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json();",
+                  "if (datos.registration) { pm.collectionVariables.set('registration_id', datos.registration.id); }",
+                  "if (datos.registration && datos.registration.qr_content) { pm.collectionVariables.set('qr_code', datos.registration.qr_content); }"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Avisos y metricas",
+      "item": [
+        {
+          "name": "Avisos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marcar avisos como leidos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/notifications/read"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Metricas del organizador",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/organizer/stats"
             },
             "auth": {
               "type": "bearer",

@@ -40,9 +40,9 @@ function estadoOportunidad(event) {
     const dias = Math.round((limite - hoy()) / 86400000);
 
     if (dias < 0) return { clave: 'finalizado', texto: 'Cerrada', color: '#9a9a9a' };
-    if (dias === 0) return { clave: 'proximo', texto: 'Cierra hoy', color: '#b26a00' };
-    if (dias === 1) return { clave: 'proximo', texto: 'Cierra mañana', color: '#b26a00' };
-    if (dias <= 7) return { clave: 'proximo', texto: `Cierra en ${dias} días`, color: '#b26a00' };
+    if (dias === 0) return { clave: 'proximo', texto: 'Cierra hoy', color: '#1e3a8a' };
+    if (dias === 1) return { clave: 'proximo', texto: 'Cierra mañana', color: '#1e3a8a' };
+    if (dias <= 7) return { clave: 'proximo', texto: `Cierra en ${dias} días`, color: '#1e3a8a' };
 
     return { clave: 'abierta', texto: 'Abierta', color: '#1e40af' };
 }
@@ -63,18 +63,18 @@ export function estadoEvento(event) {
     }
 
     if (inicio <= ahora && ahora <= fin) {
-        return { clave: 'en_curso', texto: 'En curso', color: '#2e7d32' };
+        return { clave: 'en_curso', texto: 'En curso', color: '#1e40af' };
     }
 
     // Se destacan los eventos de los proximos siete dias
     const diasFaltantes = Math.round((inicio - ahora) / 86400000);
 
     if (diasFaltantes === 1) {
-        return { clave: 'proximo', texto: 'Mañana', color: '#b26a00' };
+        return { clave: 'proximo', texto: 'Mañana', color: '#1e3a8a' };
     }
 
     if (diasFaltantes <= 7) {
-        return { clave: 'proximo', texto: `En ${diasFaltantes} días`, color: '#b26a00' };
+        return { clave: 'proximo', texto: `En ${diasFaltantes} días`, color: '#1e3a8a' };
     }
 
     return { clave: 'proximo', texto: 'Próximo', color: '#5a5a5a' };

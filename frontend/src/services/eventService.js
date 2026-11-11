@@ -91,6 +91,8 @@ export const eventService = {
     return Array.isArray(data?.events) ? data.events : [];
   },
 
+  getProfile: async () => request(`${API_BASE_URL}/profile`, { headers: getAuthHeaders() }),
+
   updateProfile: async (profile) => request(`${API_BASE_URL}/profile`, {
     method: 'PUT',
     headers: getAuthHeaders(),
@@ -117,4 +119,64 @@ export const eventService = {
     method: 'DELETE',
     headers: getAuthHeaders(),
   }),
+
+  // Eventos del mismo publico en el mismo horario
+  checkConflicts: async (params) => {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => { if (v) query.append(k, v); });
+    const data = await request(`${API_BASE_URL}/events/conflicts?${query}`, { headers: getAuthHeaders() });
+    return Array.isArray(data?.conflicts) ? data.conflicts : [];
+  },
+
+  // Planes y pago simulado de publicaciones destacadas
+  getFeaturedPlans: async () => {
+    const data = await request(`${API_BASE_URL}/featured-plans`, { headers: getAuthHeaders() });
+    return Array.isArray(data?.plans) ? data.plans : [];
+  },
+
+  featureEvent: async (id, datos) => request(`${API_BASE_URL}/events/${id}/feature`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(datos),
+  }),
+
+  getPayments: async () => {
+    const data = await request(`${API_BASE_URL}/payments`, { headers: getAuthHeaders() });
+    return Array.isArray(data?.payments) ? data.payments : [];
+  },
+
+  // Asistencia por QR
+  registerAttendance: async (id, code) => request(`${API_BASE_URL}/events/${id}/attendance`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ code }),
+  }),
+
+  // Valoraciones
+  getRatings: async (id) => request(`${API_BASE_URL}/events/${id}/ratings`, { headers: getAuthHeaders() }),
+
+  rateEvent: async (id, rating, comment) => request(`${API_BASE_URL}/events/${id}/ratings`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ rating, comment }),
+  }),
+
+  // Avisos
+  getNotifications: async () => request(`${API_BASE_URL}/notifications`, { headers: getAuthHeaders() }),
+
+  markNotificationsRead: async () => request(`${API_BASE_URL}/notifications/read`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  }),
+
+  // Recompensas y canje de puntos
+  getRewards: async () => request(`${API_BASE_URL}/rewards`, { headers: getAuthHeaders() }),
+
+  redeemReward: async (clave) => request(`${API_BASE_URL}/rewards/${clave}/redeem`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  }),
+
+  // Tablero del organizador
+  getOrganizerStats: async () => request(`${API_BASE_URL}/organizer/stats`, { headers: getAuthHeaders() }),
 };

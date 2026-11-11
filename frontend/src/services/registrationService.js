@@ -32,7 +32,7 @@ export const registrationService = {
 
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error('Debes iniciar sesión para inscribirte en un evento.');
+        throw new Error('Inicie sesión para inscribirse en un evento.');
       }
       throw new Error(data.message || 'Error al registrar la participación.');
     }

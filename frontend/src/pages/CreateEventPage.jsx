@@ -24,9 +24,7 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
         tipo: 'evento',
         deadline: '',
         externalLink: '',
-        isFeatured: false,
-        featuredUntil: '',
-        sponsor: '',
+        price: '',
     });
 
     const esOportunidad = form.tipo !== 'evento';
@@ -40,7 +38,17 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
     const [error, setError] = useState(null);
     const [successMessage, setSuccessMessage] = useState('');
 
-    const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+    // Eventos del mismo publico que coinciden en fecha y hora
+    const [conflictos, setConflictos] = useState([]);
+    const [cruceRevisado, setCruceRevisado] = useState(false);
+
+    const set = (k) => (e) => {
+        setForm((f) => ({ ...f, [k]: e.target.value }));
+        if (['date', 'endDate', 'time', 'endTime', 'faculty', 'tipo'].includes(k)) {
+            setCruceRevisado(false);
+            setConflictos([]);
+        }
+    };
 
     // Carga de datos para edición
     useEffect(() => {
@@ -73,9 +81,7 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
                     tipo: ev.type ?? 'evento',
                     deadline: normalizeDate(ev.deadline),
                     externalLink: ev.external_link ?? '',
-                    isFeatured: !!ev.is_featured,
-                    featuredUntil: normalizeDate(ev.featured_until),
-                    sponsor: ev.sponsor ?? '',
+                    price: ev.price != null && Number(ev.price) > 0 ? String(ev.price) : '',
                 });
 
                 setImagePreview(ev.image ?? null);
@@ -181,6 +187,28 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
             return;
         }
 
+        // Aviso de cruce de horarios antes de publicar un evento
+        if (!isDraft && !esOportunidad && !cruceRevisado) {
+            try {
+                const cruces = await eventService.checkConflicts({
+                    start_date: form.date,
+                    end_date: form.endDate,
+                    start_time: form.time,
+                    end_time: form.endTime,
+                    faculty: form.faculty,
+                    exclude_id: isEdit ? form.id : '',
+                });
+                setCruceRevisado(true);
+                if (cruces.length > 0) {
+                    setConflictos(cruces);
+                    setLoading(false);
+                    return;
+                }
+            } catch {
+                // Si la consulta falla se permite publicar
+            }
+        }
+
         // 3. Armado del FormData
         const formData = new FormData();
         formData.append('title', form.title);
@@ -190,11 +218,9 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
         formData.append('modality', form.type || 'Presencial');
         formData.append('status', isDraft ? 'draft' : 'published');
         formData.append('type', form.tipo);
-        formData.append('is_featured', form.isFeatured ? '1' : '0');
         if (form.deadline) formData.append('deadline', form.deadline);
         if (form.externalLink) formData.append('external_link', form.externalLink.trim());
-        if (form.isFeatured && form.featuredUntil) formData.append('featured_until', form.featuredUntil);
-        if (form.isFeatured && form.sponsor) formData.append('sponsor', form.sponsor.trim());
+        formData.append('price', !esOportunidad && form.price ? Number(form.price) : '');
 
         if (form.date) {
             formData.append('date', form.date);
@@ -222,7 +248,7 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
             setSuccessMessage(msg);
 
             setTimeout(() => {
-                safeNavigate('home');
+                safeNavigate('organizer-dashboard');
             }, 1500);
 
         } catch (err) {
@@ -267,14 +293,30 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
 
                 {/* Notificación de Éxito */}
                 {successMessage && (
-                    <div style={{ background: '#edf7ed', color: '#1e4620', border: '1px solid #c3e6cb', padding: '12px 16px', borderRadius: 4, fontSize: 13, marginBottom: 20, fontWeight: 600 }}>
+                    <div style={{ background: '#fff', color: '#0f1f3d', border: '1px solid #d4d4d4', padding: '12px 16px', borderRadius: 4, fontSize: 13, marginBottom: 20, fontWeight: 600 }}>
                         {successMessage} Redirigiendo...
+                    </div>
+                )}
+
+                {conflictos.length > 0 && (
+                    <div style={{ background: '#fff', color: '#0f1f3d', border: '1px solid #d4d4d4', padding: '12px 16px', borderRadius: 4, fontSize: 13, marginBottom: 20 }}>
+                        <strong>Cruce de horario con eventos de {form.faculty}:</strong>
+                        <ul style={{ margin: '8px 0', paddingLeft: 18 }}>
+                            {conflictos.map((c) => (
+                                <li key={c.id}>
+                                    {c.title} - {normalizeDate(c.start_date).split('-').reverse().join('/')} {normalizeTime(c.start_time)}
+                                    {c.end_time ? `-${normalizeTime(c.end_time)}` : ''}
+                                    {c.location ? `, ${c.location}` : ''}
+                                </li>
+                            ))}
+                        </ul>
+                        Cambie la fecha u hora, o pulse "Publicar de todos modos".
                     </div>
                 )}
 
                 {/* Notificación de Error */}
                 {error && (
-                    <div style={{ background: '#fdeded', color: '#5f2120', padding: '12px 16px', borderRadius: 4, fontSize: 13, marginBottom: 20 }}>
+                    <div style={{ background: '#fff', color: '#0f1f3d', padding: '12px 16px', borderRadius: 4, fontSize: 13, marginBottom: 20 }}>
                         {error}
                     </div>
                 )}
@@ -380,35 +422,18 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
                         </Field>
                     </FormSection>
 
-                    {/* Capacidad */}
-                    <FormSection title="Capacidad">
-                        <div style={{ maxWidth: 260 }}>
+                    {/* Capacidad y precio */}
+                    <FormSection title={esOportunidad ? 'Capacidad' : 'Capacidad y entrada'}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
                             <Field label="Capacidad máxima" required={!esOportunidad}>
                                 <input disabled={isDisabled} type="number" value={form.capacity} onChange={set('capacity')} placeholder="Ej: 120" min="1" style={inputStyle} />
                             </Field>
+                            {!esOportunidad && (
+                                <Field label="Precio de la entrada (USD)" hint="Vacío si la entrada es gratuita.">
+                                    <input disabled={isDisabled} type="number" value={form.price} onChange={set('price')} placeholder="0.00" min="0" step="0.50" style={inputStyle} />
+                                </Field>
+                            )}
                         </div>
-                    </FormSection>
-
-                    <FormSection title="Publicación destacada">
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#3a3a3a', cursor: 'pointer' }}>
-                            <input
-                                type="checkbox"
-                                disabled={isDisabled}
-                                checked={form.isFeatured}
-                                onChange={(e) => setForm((f) => ({ ...f, isFeatured: e.target.checked }))}
-                            />
-                            Mostrar en el carrusel de destacados del inicio
-                        </label>
-                        {form.isFeatured && (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-                                <Field label="Patrocinador">
-                                    <input disabled={isDisabled} value={form.sponsor} onChange={set('sponsor')} placeholder="Ej: Empresa auspiciante" style={inputStyle} />
-                                </Field>
-                                <Field label="Destacado hasta">
-                                    <input disabled={isDisabled} type="date" value={form.featuredUntil} onChange={set('featuredUntil')} style={inputStyle} />
-                                </Field>
-                            </div>
-                        )}
                     </FormSection>
 
                     <FormSection title="Imagen">
@@ -443,7 +468,7 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
                                             type="button"
                                             onClick={removeImage}
                                             disabled={isDisabled}
-                                            style={{ background: '#fdeded', color: '#5f2120', border: '1px solid #f5c2c2', borderRadius: 4, padding: '4px 8px', fontSize: 11, cursor: isDisabled ? 'not-allowed' : 'pointer' }}
+                                            style={{ background: '#fff', color: '#0f1f3d', border: '1px solid #d4d4d4', borderRadius: 4, padding: '4px 8px', fontSize: 11, cursor: isDisabled ? 'not-allowed' : 'pointer' }}
                                         >
                                             Quitar imagen
                                         </button>
@@ -522,7 +547,7 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
                                     opacity: isDisabled ? 0.7 : 1,
                                 }}
                             >
-                                {loading ? 'Guardando...' : isEdit ? 'Guardar cambios' : 'Publicar'}
+                                {loading ? 'Guardando...' : conflictos.length > 0 ? 'Publicar de todos modos' : isEdit ? 'Guardar cambios' : 'Publicar'}
                             </button>
                         </div>
                     </div>
@@ -556,7 +581,7 @@ function FormSection({ title, children }) {
     );
 }
 
-function Field({ label, required, children }) {
+function Field({ label, required, hint, children }) {
     return (
         <div>
             <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#3a3a3a', marginBottom: 6 }}>
@@ -564,6 +589,7 @@ function Field({ label, required, children }) {
                 {required && <span style={{ color: '#9a9a9a', marginLeft: 3 }}>*</span>}
             </label>
             {children}
+            {hint && <div style={{ fontSize: 11, color: '#7a7a7a', marginTop: 4 }}>{hint}</div>}
         </div>
     );
 }
