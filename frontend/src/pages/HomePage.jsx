@@ -5,6 +5,7 @@ import RecommendedSection from '../components/RecommendedSection';
 import { eventService } from '../services/eventService';
 import { esPasado, TIPOS } from '../utils/eventDates';
 import { FACULTADES, CATEGORIAS } from '../data/catalogos';
+import useEsMovil from '../hooks/useEsMovil';
 
 // Opciones de los filtros
 const FACULTIES = ['Todas', ...FACULTADES];
@@ -27,6 +28,9 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
     const [sortBy, setSortBy] = useState('recent');
     // Periodo mostrado: proximos, pasados o todos
     const [periodo, setPeriodo] = useState('proximos');
+    // En el telefono los filtros se despliegan con un boton
+    const esMovil = useEsMovil();
+    const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
     // Carga de datos desde la API / Supabase / Backend
     const fetchEvents = async () => {
@@ -75,6 +79,9 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
 
         return matchSearch && matchFaculty && matchCategory && matchDate && matchPeriodo;
     });
+
+    // Cantidad de filtros aplicados, mostrada en el boton del telefono
+    const filtrosActivos = [faculty !== 'Todas', category !== 'Todas', tipo !== tipoInicial, !!date].filter(Boolean).length;
 
     // Ordenamiento de los resultados
     const fechaOrden = (e) => new Date(e.deadline || e.start_date || 0);
@@ -203,6 +210,7 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
                 flexWrap: 'wrap',
             }}
             >
+            {!esMovil && (
             <span
                 style={{
                 fontSize: 12,
@@ -213,6 +221,7 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
             >
                 Filtrar por
             </span>
+            )}
 
             {/* Periodo: proximos, pasados o todos */}
             <div style={{ display: 'flex', gap: 4, marginRight: 4 }}>
@@ -227,11 +236,34 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
                 </PeriodoBtn>
             </div>
 
+            {esMovil && (
+                <button
+                    onClick={() => setFiltrosAbiertos((a) => !a)}
+                    aria-expanded={filtrosAbiertos}
+                    style={{
+                        marginLeft: 'auto',
+                        background: filtrosAbiertos ? '#1e40af' : '#fff',
+                        color: filtrosAbiertos ? '#fff' : '#1e40af',
+                        border: '1px solid #1e40af',
+                        borderRadius: 4,
+                        padding: '6px 12px',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                    }}
+                >
+                    Filtros{filtrosActivos > 0 ? ` (${filtrosActivos})` : ''}
+                </button>
+            )}
+
+            {(!esMovil || filtrosAbiertos) && (
+            <div className="pc-filtros" style={{ display: 'contents' }}>
             <FilterSelect label="Tipo" value={tipo} onChange={setTipo} options={soloOportunidades ? TYPES.filter((t) => t !== 'Evento') : TYPES} />
             <FilterSelect label="Facultad" value={faculty} onChange={setFaculty} options={FACULTIES} />
             <FilterSelect label="Categoría" value={category} onChange={setCategory} options={CATEGORIES} />
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div className="pc-filtro" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <label style={{ fontSize: 12, color: '#5a5a5a', fontWeight: 500 }}>Fecha</label>
                 <input
                 type="date"
@@ -273,6 +305,8 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
                 >
                 Limpiar filtros
                 </button>
+            )}
+            </div>
             )}
             </div>
         </div>
@@ -377,7 +411,7 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
 
 function FilterSelect({ label, value, onChange, options }) {
     return (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="pc-filtro" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         <label style={{ fontSize: 12, color: '#5a5a5a', fontWeight: 500 }}>{label}</label>
         <select
             value={value}

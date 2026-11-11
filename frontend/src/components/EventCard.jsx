@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import ImagePlaceholder from './ImagePlaceholder';
 import { estadoEvento, esOportunidad, fechaLarga, TIPOS } from '../utils/eventDates';
 
-export default function EventCard({ event, onSelect, reasons = [] }) {
+// compacto: version reducida para las recomendaciones (sin descripcion ni cupos)
+export default function EventCard({ event, onSelect, reasons = [], compacto = false }) {
     const [imgError, setImgError] = useState(false);
+    const altoImagen = compacto ? 110 : 160;
     const estado = estadoEvento(event);
 
     // Mapeo de campos de la base de datos
@@ -83,7 +85,7 @@ export default function EventCard({ event, onSelect, reasons = [] }) {
             {/* RENDERIZADO DE IMAGEN O PLACEHOLDER */}
             <div style={{ position: 'relative' }}>
                 {event?.image && !imgError ? (
-                    <div style={{ width: '100%', height: 160, overflow: 'hidden', backgroundColor: '#f3f6fb' }}>
+                    <div style={{ width: '100%', height: altoImagen, overflow: 'hidden', backgroundColor: '#f3f6fb' }}>
                         <img
                             src={event.image}
                             alt={event.title || 'Evento'}
@@ -97,7 +99,7 @@ export default function EventCard({ event, onSelect, reasons = [] }) {
                         />
                     </div>
                 ) : (
-                    <ImagePlaceholder height={160} label="Imagen del evento" style={{ borderRadius: 0 }} />
+                    <ImagePlaceholder height={altoImagen} label={compacto ? '' : 'Imagen del evento'} style={{ borderRadius: 0 }} />
                 )}
 
                 {/* Estado del evento segun su fecha */}
@@ -152,19 +154,21 @@ export default function EventCard({ event, onSelect, reasons = [] }) {
                 )}
 
                 {/* Descripción corta */}
+                {!compacto && (
                 <p style={{ margin: 0, fontSize: 12, color: '#5a5a5a', lineHeight: 1.55, flex: 1 }}>
                     {event?.description?.slice(0, 110)}
                     {event?.description?.length > 110 ? '...' : ''}
                 </p>
+                )}
 
                 {reasons.length > 0 && (
-                    <div style={{ fontSize: 11, color: '#1e40af', background: '#eef3fb', borderRadius: 3, padding: '6px 8px' }}>
+                    <div style={{ fontSize: 11, color: '#1e40af', flex: compacto ? 1 : 'none' }}>
                         {reasons[0]}
                     </div>
                 )}
 
                 {/* Barra de cupos */}
-                {!sinLimite && (
+                {!sinLimite && !compacto && (
                 <div style={{ marginTop: 4 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 11, color: '#9a9a9a' }}>
                         <span>{availableSeats} cupos disponibles</span>
@@ -186,7 +190,19 @@ export default function EventCard({ event, onSelect, reasons = [] }) {
                 {/* Botón de ver detalles */}
                 <button
                     onClick={() => onSelect && onSelect(event)}
-                    style={{
+                    style={compacto ? {
+                        marginTop: 4,
+                        background: '#fff',
+                        color: '#1e40af',
+                        border: '1px solid #c3cfe4',
+                        borderRadius: 4,
+                        padding: '7px 0',
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        width: '100%',
+                    } : {
                         marginTop: 8,
                         background: '#1e40af',
                         color: '#fff',
@@ -200,8 +216,8 @@ export default function EventCard({ event, onSelect, reasons = [] }) {
                         width: '100%',
                         transition: 'background 0.15s',
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#1e3a8a')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = '#1e40af')}
+                    onMouseEnter={(e) => { if (!compacto) e.currentTarget.style.background = '#1e3a8a'; }}
+                    onMouseLeave={(e) => { if (!compacto) e.currentTarget.style.background = '#1e40af'; }}
                 >
                     Ver detalles
                 </button>

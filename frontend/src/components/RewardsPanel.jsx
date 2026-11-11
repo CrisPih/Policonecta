@@ -6,6 +6,27 @@ export default function RewardsPanel() {
     const [datos, setDatos] = useState(null);
     const [canjeando, setCanjeando] = useState(null);
     const [aviso, setAviso] = useState('');
+    const [codigo, setCodigo] = useState('');
+    const [agregando, setAgregando] = useState(false);
+    const [avisoCodigo, setAvisoCodigo] = useState('');
+
+    // Agrega un cupon a partir de un codigo promocional
+    const agregarCodigo = async (e) => {
+        e.preventDefault();
+        if (!codigo.trim()) return;
+        setAgregando(true);
+        setAvisoCodigo('');
+        try {
+            const r = await eventService.claimCoupon(codigo.trim());
+            setAvisoCodigo(`${r.message} ${r.coupon.name}.`);
+            setCodigo('');
+            await cargar();
+        } catch (err) {
+            setAvisoCodigo(err.message || 'No se pudo agregar el cupón.');
+        } finally {
+            setAgregando(false);
+        }
+    };
 
     const cargar = () => eventService.getRewards().then(setDatos).catch(() => setDatos({ points: 0, rewards: [], coupons: [] }));
 
@@ -78,6 +99,25 @@ export default function RewardsPanel() {
             {aviso && <p style={{ margin: '0 0 16px', fontSize: 12, color: '#0f1f3d' }}>{aviso}</p>}
 
             <h3 style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color: '#0f1f3d' }}>Mis cupones</h3>
+
+            <form onSubmit={agregarCodigo} style={{ display: 'flex', gap: 8, marginBottom: avisoCodigo ? 6 : 14, flexWrap: 'wrap' }}>
+                <input
+                    value={codigo}
+                    onChange={(e) => setCodigo(e.target.value.toUpperCase())}
+                    placeholder="Código promocional"
+                    aria-label="Código promocional"
+                    maxLength={30}
+                    style={{ flex: 1, minWidth: 160, padding: '8px 12px', border: '1px solid #d4d4d4', borderRadius: 4, fontSize: 13, fontFamily: 'inherit' }}
+                />
+                <button
+                    type="submit"
+                    disabled={!codigo.trim() || agregando}
+                    style={{ background: '#fff', color: '#1e40af', border: '1px solid #1e40af', borderRadius: 4, padding: '8px 16px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', opacity: !codigo.trim() || agregando ? 0.5 : 1 }}
+                >
+                    {agregando ? 'Agregando...' : 'Agregar cupón'}
+                </button>
+            </form>
+            {avisoCodigo && <p style={{ margin: '0 0 14px', fontSize: 12, color: '#0f1f3d' }}>{avisoCodigo}</p>}
             {datos.coupons.length === 0 ? (
                 <p style={{ margin: 0, fontSize: 13, color: '#9a9a9a' }}>Sin cupones</p>
             ) : (

@@ -45,6 +45,7 @@ export default function FeaturedCarousel({ onSelect }) {
             </div>
 
             <div
+                className="pc-carrusel"
                 style={{
                     position: 'relative',
                     borderRadius: 8,
@@ -70,7 +71,7 @@ export default function FeaturedCarousel({ onSelect }) {
                     }}
                 />
 
-                <div style={{ position: 'relative', padding: '32px 64px', maxWidth: 620, color: '#fff', boxSizing: 'border-box' }}>
+                <div className="pc-carrusel-texto" style={{ position: 'relative', padding: '32px 64px', maxWidth: 620, color: '#fff', boxSizing: 'border-box' }}>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
                         <Chip>{TIPOS[item.type] || 'Evento'}</Chip>
                         {item.faculty && <Chip>{item.faculty}</Chip>}

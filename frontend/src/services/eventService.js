@@ -172,6 +172,12 @@ export const eventService = {
   // Recompensas y canje de puntos
   getRewards: async () => request(`${API_BASE_URL}/rewards`, { headers: getAuthHeaders() }),
 
+  claimCoupon: async (code) => request(`${API_BASE_URL}/rewards/claim`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ code }),
+  }),
+
   redeemReward: async (clave) => request(`${API_BASE_URL}/rewards/${clave}/redeem`, {
     method: 'POST',
     headers: getAuthHeaders(),

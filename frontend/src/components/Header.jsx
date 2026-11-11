@@ -12,6 +12,23 @@ export default function Header({
     onOpenRegister,
     }) {
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [menuMovil, setMenuMovil] = useState(false);
+
+    // Enlaces del menu hamburguesa del telefono
+    const enlacesMovil = [
+        ['home', 'Inicio'],
+        ['opportunities', 'Oportunidades'],
+        ['faculties', 'Facultades'],
+        ['calendar', 'Calendario'],
+        ...(isLoggedIn && role === 'user' ? [['my-registrations', 'Mis inscripciones']] : []),
+        ...(isLoggedIn && role === 'organizer' ? [['attendance', 'Registro de asistencia']] : []),
+        ...(isLoggedIn && role !== 'public' ? [['profile', 'Mi perfil']] : [['login', 'Iniciar sesión'], ['register', 'Registrarse']]),
+    ];
+
+    const irMovil = (pagina) => {
+        setMenuMovil(false);
+        setCurrentPage(pagina);
+    };
 
     // Helper para obtener las iniciales dinámicamente si no vienen explícitas
     const getInitials = (name) => {
@@ -162,22 +179,12 @@ export default function Header({
                 </span>
             )}
 
-            {/* En el telefono el organizador solo registra asistencia */}
-            {isLoggedIn && role === 'organizer' && (
-                <button
-                    className="pc-solo-movil"
-                    onClick={() => setCurrentPage('attendance')}
-                    style={navBtnStyle(currentPage === 'attendance')}
-                >
-                    Asistencia
-                </button>
-            )}
             </nav>
 
     {/* ÁREA DERECHA: AUTENTICACIÓN / DATOS DINÁMICOS DEL USUARIO */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
             {!isLoggedIn || role === 'public' ? (
-                <>
+                <span className="pc-solo-web" style={{ display: 'flex', gap: 12 }}>
                 <button
                     onClick={handleLoginClick}
                     style={{
@@ -208,7 +215,7 @@ export default function Header({
                 >
                     Registrarse
                 </button>
-                </>
+                </span>
             ) : (
                 /* MENÚ DEL USUARIO/ORGANIZADOR AUTENTICADO */
             <>
@@ -283,8 +290,59 @@ export default function Header({
                 </div>
             </>
             )}
+
+            {/* Boton del menu en el telefono */}
+            <button
+                className="pc-solo-movil"
+                onClick={() => setMenuMovil((m) => !m)}
+                aria-label={menuMovil ? 'Cerrar menú' : 'Abrir menú'}
+                aria-expanded={menuMovil}
+                style={{ background: 'none', border: '1px solid #d4d4d4', borderRadius: 6, width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}
+            >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0f1f3d" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                    {menuMovil
+                        ? <path d="M6 6l12 12M18 6L6 18" />
+                        : <path d="M4 7h16M4 12h16M4 17h16" />}
+                </svg>
+            </button>
             </div>
         </div>
+
+        {/* Menu desplegable del telefono */}
+        {menuMovil && (
+            <nav className="pc-solo-movil" style={{ borderTop: '1px solid #e5e5e5', background: '#fff', padding: '6px 16px 12px' }}>
+                {enlacesMovil.map(([pagina, texto]) => (
+                    <button
+                        key={pagina}
+                        onClick={() => irMovil(pagina)}
+                        style={{
+                            display: 'block',
+                            width: '100%',
+                            textAlign: 'left',
+                            background: currentPage === pagina ? '#f3f6fb' : 'none',
+                            border: 'none',
+                            borderRadius: 4,
+                            padding: '12px 10px',
+                            fontSize: 15,
+                            fontWeight: currentPage === pagina ? 600 : 400,
+                            color: currentPage === pagina ? '#1e40af' : '#0f1f3d',
+                            cursor: 'pointer',
+                            fontFamily: 'inherit',
+                        }}
+                    >
+                        {texto}
+                    </button>
+                ))}
+                {isLoggedIn && role !== 'public' && (
+                    <button
+                        onClick={() => { setMenuMovil(false); handleLogoutClick(); }}
+                        style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', borderTop: '1px solid #efefef', marginTop: 6, padding: '12px 10px', fontSize: 15, color: '#3b4a66', cursor: 'pointer', fontFamily: 'inherit' }}
+                    >
+                        Cerrar sesión
+                    </button>
+                )}
+            </nav>
+        )}
         </header>
     );
 }

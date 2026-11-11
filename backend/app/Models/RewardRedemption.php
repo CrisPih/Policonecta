@@ -14,8 +14,16 @@ class RewardRedemption extends Model
         'entrada' => ['name' => 'Entrada gratis a un evento pagado', 'points' => 50, 'prefix' => 'ENT'],
     ];
 
+    // Codigos promocionales que agregan un cupon sin gastar puntos
+    public const PROMOCIONES = [
+        'BIENVENIDA2026' => 'entrada',
+        'ESPOLSHOP10' => 'shop',
+        'BARPOLI' => 'bar',
+    ];
+
     protected $fillable = [
         'user_id',
+        'promo_code',
         'reward',
         'points',
         'code',

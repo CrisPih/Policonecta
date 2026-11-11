@@ -43,11 +43,58 @@ textarea:focus-visible {
     gap: 8px !important;
   }
 
+  .pc-header {
+    flex-wrap: nowrap;
+  }
+
   .pc-nav {
-    order: 3;
-    width: 100%;
+    display: none !important;
+  }
+
+  /* Tarjetas que se deslizan de lado */
+  .pc-deslizable {
+    display: flex !important;
     overflow-x: auto;
-    gap: 18px !important;
+    scroll-snap-type: x mandatory;
+    gap: 12px !important;
+    margin: 0 -16px;
+    padding: 0 16px 8px;
+    scrollbar-width: none;
+  }
+
+  .pc-deslizable::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pc-deslizable > * {
+    flex: 0 0 82%;
+    scroll-snap-align: start;
+  }
+
+  /* Filtros apilados a todo el ancho */
+  .pc-filtro {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .pc-filtro label {
+    min-width: 72px;
+  }
+
+  .pc-filtro select,
+  .pc-filtro input {
+    flex: 1;
+    padding-top: 9px !important;
+    padding-bottom: 9px !important;
+    font-size: 14px !important;
+  }
+
+  .pc-carrusel {
+    min-height: 300px !important;
+  }
+
+  .pc-carrusel-texto {
+    padding: 24px 48px !important;
   }
 
   .pc-solo-web {

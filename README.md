@@ -53,6 +53,14 @@ El canje es una simulación: genera un cupón con código y descuenta los puntos
 | 10 % de descuento en ESPOL Shop | 30 | Se presenta el código en la tienda |
 | Comida gratis en un bar del campus | 20 | Se presenta el código en el bar |
 | Entrada gratis a un evento pagado | 50 | Se aplica al comprar la entrada y el total queda en $0 |
+
+También se agregan cupones sin gastar puntos con un código promocional en "Mis cupones":
+
+| Código | Cupón |
+|---|---|
+| `BIENVENIDA2026` | Entrada gratis a un evento pagado |
+| `ESPOLSHOP10` | 10 % de descuento en ESPOL Shop |
+| `BARPOLI` | Comida gratis en un bar del campus |
 | Valoración de eventos | Calificación de 1 a 5 y comentario de quienes asistieron. |
 | Avisos | Publicaciones afines al perfil, recordatorios de eventos, cierres de postulación y valoraciones pendientes. |
 | Calendario | Vista mensual y descarga del evento para Google Calendar u Outlook. |
@@ -196,6 +204,7 @@ Ruta base `/api`. La colección de Postman está en [docs/postman/PoliConecta.po
 | `GET` | `/organizer/stats` | Métricas del organizador | Sí |
 | `GET` | `/rewards` | Puntos, catálogo de recompensas y cupones | Sí |
 | `POST` | `/rewards/{clave}/redeem` | Canjear puntos (`shop`, `bar` o `entrada`) | Sí |
+| `POST` | `/rewards/claim` | Agregar un cupón con un código promocional | Sí |
 | `GET` | `/events/{id}/registrations` | Inscritos de una publicación | Sí |
 | `POST` | `/events/{id}/registrations` | Inscribirse | Sí |
 | `DELETE` | `/events/{id}/registrations/{id}` | Cancelar la inscripción | Sí |

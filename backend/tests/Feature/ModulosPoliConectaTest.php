@@ -249,6 +249,22 @@ class ModulosPoliConectaTest extends TestCase
             ->assertJsonCount(1, 'coupons');
     }
 
+    public function test_codigo_promocional_agrega_un_cupon_una_sola_vez(): void
+    {
+        $alumno = User::factory()->create();
+        Sanctum::actingAs($alumno);
+
+        $this->postJson('/api/rewards/claim', ['code' => ' bienvenida2026 '])
+            ->assertCreated()
+            ->assertJsonPath('coupon.reward', 'entrada')
+            ->assertJsonPath('coupon.points', 0);
+
+        $this->postJson('/api/rewards/claim', ['code' => 'BIENVENIDA2026'])->assertStatus(409);
+        $this->postJson('/api/rewards/claim', ['code' => 'NOEXISTE'])->assertStatus(422);
+
+        $this->assertSame(0, $alumno->fresh()->points);
+    }
+
     public function test_cupon_de_entrada_gratis_se_usa_y_se_devuelve_al_cancelar(): void
     {
         $event = $this->evento($this->organizador(), ['price' => 10]);

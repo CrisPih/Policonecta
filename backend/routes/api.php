@@ -60,6 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Recompensas: catalogo y canje de puntos
     Route::get('/rewards', [RewardController::class, 'index']);
+    Route::post('/rewards/claim', [RewardController::class, 'claim']);
     Route::post('/rewards/{reward}/redeem', [RewardController::class, 'redeem']);
 
     // Tablero de metricas del organizador
