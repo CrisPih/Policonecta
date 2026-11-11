@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Event;
+use App\Models\Registration;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -21,7 +22,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::updateOrCreate(
+        $estudiante = User::updateOrCreate(
             ['email' => 'estudiante@policonecta.test'],
             [
                 'name' => 'Julio Cevallos',
@@ -49,8 +50,15 @@ class DatabaseSeeder extends Seeder
                 'description' => 'Conferencias y talleres sobre aprendizaje automático en la industria ecuatoriana.',
                 'type' => 'evento', 'category' => 'Congreso', 'modality' => 'Híbrido', 'faculty' => 'FIEC',
                 'start_date' => $dia(15), 'end_date' => $dia(16), 'start_time' => '08:30', 'end_time' => '17:00',
-                'location' => 'Auditorio FIEC', 'max_participants' => 250,
+                'location' => 'Auditorio FIEC', 'max_participants' => 250, 'price' => 10.00,
                 'is_featured' => true, 'sponsor' => 'TechEcuador',
+            ],
+            [
+                'title' => 'Charla de bienvenida a la comunidad FIEC',
+                'description' => 'Presentación de clubes, laboratorios y servicios de la facultad.',
+                'type' => 'evento', 'category' => 'Conferencia', 'modality' => 'Presencial', 'faculty' => 'FIEC',
+                'start_date' => $dia(-3), 'start_time' => '10:00', 'end_time' => '12:00',
+                'location' => 'Auditorio FIEC', 'max_participants' => 120,
             ],
             [
                 'title' => 'Taller de Arduino para principiantes',
@@ -104,6 +112,23 @@ class DatabaseSeeder extends Seeder
                     'end_date' => $datos['end_date'] ?? $datos['start_date'],
                 ]
             );
+        }
+
+        // El estudiante de prueba asistio a la charla de bienvenida y puede valorarla
+        $charla = Event::where('title', 'Charla de bienvenida a la comunidad FIEC')->first();
+        $registro = Registration::firstOrCreate(
+            ['event_id' => $charla->id, 'email' => $estudiante->email],
+            ['name' => $estudiante->name]
+        );
+
+        if (!$registro->attended_at) {
+            $registro->update(['attended_at' => now()->subDays(3)]);
+            $estudiante->increment('points', Registration::PUNTOS_ASISTENCIA);
+        }
+
+        // Saldo inicial para demostrar el canje de recompensas
+        if ($estudiante->fresh()->points < 60) {
+            $estudiante->forceFill(['points' => 60])->save();
         }
     }
 }

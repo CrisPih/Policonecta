@@ -13,6 +13,7 @@ class RecommendationController extends Controller
     // Pesos de cada criterio
     private const PESO_INTERES = 3;
     private const PESO_FACULTAD = 2;
+    private const PESO_CARRERA = 2;
     private const PESO_HISTORIAL = 1;
     private const MAXIMO_HISTORIAL = 3;
     private const PESO_FECHA_LIMITE = 1;
@@ -28,6 +29,7 @@ class RecommendationController extends Controller
         $today = Carbon::today();
 
         $intereses = collect($user->interests ?? [])->map(fn ($i) => mb_strtolower($i));
+        $palabrasCarrera = self::palabrasCarrera($user->career);
 
         // Historial: categorias y tipos de las publicaciones en las que se inscribio
         $historial = Registration::with('event')
@@ -51,7 +53,7 @@ class RecommendationController extends Controller
 
         $recomendados = $candidatos
             ->filter(fn ($e) => $e->available_spots === null || $e->available_spots > 0)
-            ->map(function ($event) use ($user, $intereses, $categoriasPrevias, $tiposPrevios, $today) {
+            ->map(function ($event) use ($user, $intereses, $palabrasCarrera, $categoriasPrevias, $tiposPrevios, $today) {
                 $puntaje = 0;
                 $razones = [];
 
@@ -69,6 +71,12 @@ class RecommendationController extends Controller
                 if ($user->faculty && $event->faculty === $user->faculty) {
                     $puntaje += self::PESO_FACULTAD;
                     $razones[] = 'Organizado por su facultad';
+                }
+
+                $texto = mb_strtolower($event->title . ' ' . $event->description);
+                if ($palabrasCarrera->contains(fn ($p) => str_contains($texto, $p))) {
+                    $puntaje += self::PESO_CARRERA;
+                    $razones[] = 'Relacionado con su carrera';
                 }
 
                 $previas = min(
@@ -115,6 +123,17 @@ class RecommendationController extends Controller
         $fin = $event->end_date ?? $event->start_date;
 
         return $fin ? Carbon::parse($fin)->lt($today) : false;
+    }
+
+    // Palabras significativas de la carrera, sin los grados academicos
+    private static function palabrasCarrera(?string $carrera)
+    {
+        $comunes = ['ingenieria', 'ingeniería', 'licenciatura', 'maestria', 'maestría', 'tecnologia', 'tecnología'];
+
+        return collect(preg_split('/[\s,]+/u', mb_strtolower($carrera ?? '')))
+            ->filter(fn ($p) => mb_strlen($p) >= 5 && !in_array($p, $comunes, true))
+            ->map(fn ($p) => mb_substr($p, 0, 7))
+            ->values();
     }
 
     private static function nombreTipo(string $tipo): string

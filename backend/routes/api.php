@@ -6,6 +6,12 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\RegistrationController;
 use App\Http\Controllers\RecommendationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\RatingController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrganizerStatsController;
+use App\Http\Controllers\RewardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,7 +26,12 @@ Route::post('/register', [AuthController::class, 'register']);
 // Consulta de eventos pública -- Dhamar Patiño / Cristina Pihuave
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/featured', [EventController::class, 'featured']);
+Route::get('/events/conflicts', [EventController::class, 'conflicts']);
 Route::get('/events/{event}', [EventController::class, 'show']);
+Route::get('/events/{event}/ratings', [RatingController::class, 'index']);
+
+// Planes de publicacion destacada
+Route::get('/featured-plans', [PaymentController::class, 'plans']);
 
 
 /*
@@ -34,6 +45,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::put('/profile', [ProfileController::class, 'update']);
     Route::get('/recommendations', [RecommendationController::class, 'index']);
+
+    // Avisos dentro de la plataforma
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/read', [NotificationController::class, 'markAllRead']);
+
+    // Pagos simulados: publicacion destacada e historial
+    Route::post('/events/{event}/feature', [PaymentController::class, 'feature']);
+    Route::get('/payments', [PaymentController::class, 'index']);
+
+    // Asistencia por QR y valoracion de eventos
+    Route::post('/events/{event}/attendance', [AttendanceController::class, 'store']);
+    Route::post('/events/{event}/ratings', [RatingController::class, 'store']);
+
+    // Recompensas: catalogo y canje de puntos
+    Route::get('/rewards', [RewardController::class, 'index']);
+    Route::post('/rewards/{reward}/redeem', [RewardController::class, 'redeem']);
+
+    // Tablero de metricas del organizador
+    Route::get('/organizer/stats', [OrganizerStatsController::class, 'index']);
 
     // Creación de eventos -- Dhamar Patiño
     Route::post('/events', [EventController::class, 'store']);

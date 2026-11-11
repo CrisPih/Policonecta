@@ -33,10 +33,12 @@ class Event extends Model
         'is_featured',
         'featured_until',
         'sponsor',
+        'price',
     ];
 
     protected $casts = [
         'is_featured' => 'boolean',
+        'price' => 'float',
     ];
 
     // Relación con el usuario organizador
@@ -50,6 +52,22 @@ class Event extends Model
     public function registrations()
     {
         return $this->hasMany(Registration::class);
+    }
+
+    public function ratings()
+    {
+        return $this->hasMany(Rating::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    // Indica si la entrada tiene costo
+    public function isPaid(): bool
+    {
+        return $this->price !== null && $this->price > 0;
     }
 
     public function registeredCount()

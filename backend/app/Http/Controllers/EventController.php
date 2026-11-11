@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use App\Services\ImageStorage;
+use App\Services\Notificador;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -38,9 +39,7 @@ class EventController extends Controller
             'type'             => 'nullable|string|in:' . implode(',', Event::TYPES),
             'deadline'         => ($isOpportunity && !$isDraft ? 'required|date' : 'nullable|date') . '|before:2100-01-01',
             'external_link'    => 'nullable|url|max:500',
-            'is_featured'      => 'nullable|boolean',
-            'featured_until'   => 'nullable|date|before:2100-01-01',
-            'sponsor'          => 'nullable|string|max:150',
+            'price'            => 'nullable|numeric|min:0|max:10000',
         ];
 
         $validated = $request->validate($rules);
@@ -57,13 +56,14 @@ class EventController extends Controller
 
         $validated['status'] = $request->input('status', 'published');
         $validated['type'] = $validated['type'] ?? 'evento';
-        $validated['is_featured'] = $request->boolean('is_featured');
 
         if ($request->hasFile('image')) {
             $validated['image'] = ImageStorage::store($request->file('image'));
         }
 
         $event = Event::create($validated);
+
+        Notificador::nuevaPublicacion($event);
 
         return response()->json([
             'message' => $isDraft ? 'Borrador guardado correctamente.' : 'Evento creado correctamente.',
@@ -199,7 +199,69 @@ class EventController extends Controller
             'event'                   => $event,
             'registered_participants' => $event->registeredCount(),
             'available_spots'         => $event->availableSpots(),
+            'rating_average'          => $event->ratings()->count() ? round($event->ratings()->avg('rating'), 1) : null,
+            'rating_count'            => $event->ratings()->count(),
         ]);
+    }
+
+    // Detector de cruces: eventos publicados en el mismo horario
+    // y dirigidos al mismo publico (misma facultad)
+
+    // GET /api/events/conflicts
+    public function conflicts(Request $request)
+    {
+        $validated = $request->validate([
+            'start_date' => 'required|date',
+            'end_date'   => 'nullable|date|after_or_equal:start_date',
+            'start_time' => 'nullable|date_format:H:i,H:i:s',
+            'end_time'   => 'nullable|date_format:H:i,H:i:s',
+            'faculty'    => 'nullable|string|max:100',
+            'exclude_id' => 'nullable|integer',
+        ]);
+
+        $inicio = $validated['start_date'];
+        $fin = $validated['end_date'] ?? $inicio;
+
+        $candidatos = Event::query()
+            ->where('status', 'published')
+            ->where('type', 'evento')
+            ->whereDate('start_date', '<=', $fin)
+            ->where(function ($q) use ($inicio) {
+                $q->whereDate('end_date', '>=', $inicio)
+                  ->orWhere(fn ($q2) => $q2->whereNull('end_date')->whereDate('start_date', '>=', $inicio));
+            })
+            ->when($validated['exclude_id'] ?? null, fn ($q, $id) => $q->where('id', '!=', $id))
+            ->when($validated['faculty'] ?? null, fn ($q, $f) => $q->where('faculty', $f))
+            ->get();
+
+        $desde = self::minutos($validated['start_time'] ?? null);
+        $hasta = self::minutos($validated['end_time'] ?? null) ?? ($desde !== null ? $desde + 120 : null);
+
+        $cruces = $candidatos->filter(function (Event $e) use ($desde, $hasta) {
+            $otroDesde = self::minutos($e->start_time);
+            if ($desde === null || $otroDesde === null) {
+                return true;
+            }
+            $otroHasta = self::minutos($e->end_time) ?? $otroDesde + 120;
+
+            return $desde < $otroHasta && $otroDesde < $hasta;
+        })->values();
+
+        return response()->json([
+            'message'   => $cruces->isEmpty() ? 'Sin cruces de horario.' : 'Hay eventos en el mismo horario para el mismo público.',
+            'conflicts' => $cruces->map->only(['id', 'title', 'faculty', 'start_date', 'start_time', 'end_time', 'location'])->values(),
+        ]);
+    }
+
+    // Convierte una hora HH:MM en minutos desde la medianoche
+    private static function minutos(?string $hora): ?int
+    {
+        if (!$hora) {
+            return null;
+        }
+        [$h, $m] = explode(':', $hora);
+
+        return (int) $h * 60 + (int) $m;
     }
 
     // PUT / PATCH /api/events/{id}
@@ -231,9 +293,7 @@ class EventController extends Controller
             'type'             => 'sometimes|nullable|string|in:' . implode(',', Event::TYPES),
             'deadline'         => 'sometimes|nullable|date|before:2100-01-01',
             'external_link'    => 'sometimes|nullable|url|max:500',
-            'is_featured'      => 'sometimes|boolean',
-            'featured_until'   => 'sometimes|nullable|date|before:2100-01-01',
-            'sponsor'          => 'sometimes|nullable|string|max:150',
+            'price'            => 'sometimes|nullable|numeric|min:0|max:10000',
         ]);
 
         if ($request->hasFile('image')) {
@@ -256,7 +316,12 @@ class EventController extends Controller
             }
         }
 
+        $eraBorrador = $event->status !== 'published';
         $event->update($validated);
+
+        if ($eraBorrador && $event->status === 'published') {
+            Notificador::nuevaPublicacion($event);
+        }
 
         return response()->json([
             'message' => 'Evento actualizado correctamente.',
