@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { eventService } from '../services/eventService';
 import { FACULTADES as FACULTIES_LIST, CATEGORIAS as CATEGORIES_LIST } from '../data/catalogos';
 import { TIPOS } from '../utils/eventDates';
+import TagInput from '../components/TagInput';
 
 const normalizeDate = (value) => typeof value === 'string' ? value.slice(0, 10) : '';
 const normalizeTime = (value) => typeof value === 'string' ? value.slice(0, 5) : '';
@@ -25,7 +26,17 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
         deadline: '',
         externalLink: '',
         price: '',
+        tags: [],
+        origen: 'facultad',
+        clubId: '',
+        externo: '',
     });
+
+    // Clubes disponibles para el campo Organiza
+    const [clubes, setClubes] = useState([]);
+    useEffect(() => {
+        eventService.getClubs().then(setClubes).catch(() => setClubes([]));
+    }, []);
 
     const esOportunidad = form.tipo !== 'evento';
 
@@ -82,6 +93,10 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
                     deadline: normalizeDate(ev.deadline),
                     externalLink: ev.external_link ?? '',
                     price: ev.price != null && Number(ev.price) > 0 ? String(ev.price) : '',
+                    tags: Array.isArray(ev.tags) ? ev.tags : [],
+                    origen: ev.external_organizer ? 'externo' : ev.club_id ? 'club' : 'facultad',
+                    clubId: ev.club_id ? String(ev.club_id) : '',
+                    externo: ev.external_organizer ?? '',
                 });
 
                 setImagePreview(ev.image ?? null);
@@ -165,6 +180,12 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
             }
         }
 
+        if ((form.origen === 'club' && !form.clubId) || (form.origen === 'externo' && !form.externo.trim())) {
+            setError(form.origen === 'club' ? 'Seleccione el club que organiza.' : 'Ingrese el nombre de la organización externa.');
+            setLoading(false);
+            return;
+        }
+
         // 2. Validaciones de fechas si están ingresadas
         if (form.endDate && form.date && form.endDate < form.date) {
             setError('La fecha de finalización no puede ser anterior a la fecha de inicio.');
@@ -221,6 +242,13 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
         if (form.deadline) formData.append('deadline', form.deadline);
         if (form.externalLink) formData.append('external_link', form.externalLink.trim());
         formData.append('price', !esOportunidad && form.price ? Number(form.price) : '');
+        formData.append('club_id', form.origen === 'club' ? form.clubId : '');
+        formData.append('external_organizer', form.origen === 'externo' ? form.externo.trim() : '');
+        if (form.tags.length) {
+            form.tags.forEach((t) => formData.append('tags[]', t));
+        } else {
+            formData.append('tags', '');
+        }
 
         if (form.date) {
             formData.append('date', form.date);
@@ -382,6 +410,42 @@ export default function CreateEventPage({ navigate, mode = 'create', eventId = n
                                 <option value="Híbrido">Híbrido</option>
                             </select>
                         </Field>
+
+                        <Field label="Palabras clave" hint="Se comparan con los intereses de los participantes.">
+                            <TagInput
+                                value={form.tags}
+                                onChange={(tags) => setForm((f) => ({ ...f, tags }))}
+                                placeholder="Ej: python, cosplay, emprendimiento"
+                                disabled={isDisabled}
+                            />
+                        </Field>
+                    </FormSection>
+
+                    <FormSection title="Organiza">
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+                            <Field label="Tipo de organizador">
+                                <select disabled={isDisabled} value={form.origen} onChange={set('origen')} style={inputStyle}>
+                                    <option value="facultad">Facultad o unidad de la ESPOL</option>
+                                    <option value="club">Club estudiantil</option>
+                                    <option value="externo">Organización externa</option>
+                                </select>
+                            </Field>
+                            {form.origen === 'club' && (
+                                <Field label="Club" required>
+                                    <select disabled={isDisabled} value={form.clubId} onChange={set('clubId')} style={inputStyle}>
+                                        <option value="">Seleccione un club</option>
+                                        {clubes.map((c) => (
+                                            <option key={c.id} value={c.id}>{c.acronym ? `${c.acronym} - ${c.name}` : c.name}</option>
+                                        ))}
+                                    </select>
+                                </Field>
+                            )}
+                            {form.origen === 'externo' && (
+                                <Field label="Nombre de la organización" required>
+                                    <input disabled={isDisabled} value={form.externo} onChange={set('externo')} placeholder="Ej: Comunidad Emprende Litoral" maxLength={150} style={inputStyle} />
+                                </Field>
+                            )}
+                        </div>
                     </FormSection>
 
                     {/* Fecha, Hora y Lugar */}

@@ -42,7 +42,7 @@ class RecommendationController extends Controller
         $categoriasPrevias = $historial->pluck('category')->filter()->map(fn ($c) => mb_strtolower($c))->countBy();
         $tiposPrevios = $historial->pluck('type')->filter()->countBy();
 
-        $candidatos = Event::query()
+        $candidatos = Event::query()->with('club:id,name,acronym')
             ->where('status', 'published')
             ->whereNotIn('id', $inscritos)
             ->withCount('registrations')
@@ -66,6 +66,14 @@ class RecommendationController extends Controller
                 if ($event->type && $intereses->contains($event->type)) {
                     $puntaje += self::PESO_INTERES;
                     $razones[] = 'Coincide con su interés en ' . self::nombreTipo($event->type);
+                }
+
+                // Palabras clave de la publicacion que coinciden con los intereses
+                $etiqueta = collect($event->tags ?? [])
+                    ->first(fn ($t) => $intereses->contains(mb_strtolower(trim($t))) && mb_strtolower(trim($t)) !== $categoria);
+                if ($etiqueta) {
+                    $puntaje += self::PESO_INTERES;
+                    $razones[] = 'Coincide con su interés en ' . $etiqueta;
                 }
 
                 if ($user->faculty && $event->faculty === $user->faculty) {

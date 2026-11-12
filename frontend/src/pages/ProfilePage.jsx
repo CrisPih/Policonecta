@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { eventService } from '../services/eventService';
 import { FACULTADES, INTERESES } from '../data/catalogos';
 import RewardsPanel from '../components/RewardsPanel';
+import TagInput from '../components/TagInput';
 
 // Perfil del usuario con sus datos de cuenta -- Dhamar Patiño
 
@@ -28,6 +29,10 @@ export default function ProfilePage({ user, role, onLogout, setCurrentPage, onUs
         eventService.getPayments().then(setPagos).catch(() => setPagos([]));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    // Intereses escritos por el usuario, fuera de la lista predefinida
+    const predefinidos = INTERESES.map((i) => i.valor);
+    const interesesPropios = interests.filter((i) => !predefinidos.includes(i));
 
     const alternarInteres = (valor) => {
         setInterests((lista) => (lista.includes(valor) ? lista.filter((i) => i !== valor) : [...lista, valor]));
@@ -153,6 +158,16 @@ export default function ProfilePage({ user, role, onLogout, setCurrentPage, onUs
                                     </button>
                                 );
                             })}
+                        </div>
+
+                        <div style={{ fontSize: 12, fontWeight: 600, color: '#3a3a3a', marginBottom: 8 }}>Otros intereses</div>
+                        <div style={{ marginBottom: 14 }}>
+                            <TagInput
+                                value={interesesPropios}
+                                onChange={(propios) => setInterests([...interests.filter((i) => predefinidos.includes(i)), ...propios])}
+                                placeholder="Ej: anime, python, fotografía"
+                                max={20 - interests.filter((i) => predefinidos.includes(i)).length}
+                            />
                         </div>
 
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>

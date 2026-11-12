@@ -11,6 +11,7 @@ import useEsMovil from '../hooks/useEsMovil';
 const FACULTIES = ['Todas', ...FACULTADES];
 const CATEGORIES = ['Todas', ...CATEGORIAS];
 const TYPES = ['Todos', ...Object.values(TIPOS)];
+const ORIGENES = { Todos: '', Facultades: 'facultad', Clubes: 'club', Externos: 'externo' };
 const tipoPorNombre = Object.fromEntries(Object.entries(TIPOS).map(([k, v]) => [v, k]));
 
 export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInicial = 'Todos', soloOportunidades = false }) {
@@ -28,6 +29,10 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
     const [sortBy, setSortBy] = useState('recent');
     // Periodo mostrado: proximos, pasados o todos
     const [periodo, setPeriodo] = useState('proximos');
+    // Quien organiza y coincidencia con los intereses del perfil
+    const [origen, setOrigen] = useState('Todos');
+    const [misIntereses, setMisIntereses] = useState(false);
+    const interesesUsuario = (user?.interests ?? []).map((i) => i.toLowerCase().trim());
     // En el telefono los filtros se despliegan con un boton
     const esMovil = useEsMovil();
     const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
@@ -43,6 +48,7 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
             date,
             type: tipo !== 'Todos' ? tipoPorNombre[tipo] : '',
             kind: soloOportunidades ? 'oportunidades' : '',
+            origin: ORIGENES[origen],
         });
         setEvents(data);
         setError(null);
@@ -59,13 +65,20 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
         fetchEvents();
         }, 300); // Debounce para evitar llamadas excesivas en la búsqueda
         return () => clearTimeout(timer);
-    }, [search, faculty, category, date, tipo, soloOportunidades]);
+    }, [search, faculty, category, date, tipo, origen, soloOportunidades]);
 
     // Filtrado local en caso de que utilices un arreglo local
     const filtered = events.filter((e) => {
-        const matchSearch =
-        (e.title && e.title.toLowerCase().includes(search.toLowerCase())) ||
-        (e.description && e.description.toLowerCase().includes(search.toLowerCase()));
+        const buscado = search.toLowerCase().trim();
+        const textoEvento = [e.title, e.description, ...(e.tags ?? []), e.club?.name, e.club?.acronym, e.external_organizer]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase();
+        const matchSearch = !buscado || textoEvento.includes(buscado);
+
+        // Coincidencia de palabras clave, categoria o tipo con los intereses del perfil
+        const palabras = [...(e.tags ?? []), e.category, e.type].filter(Boolean).map((t) => t.toLowerCase().trim());
+        const matchIntereses = !misIntereses || palabras.some((t) => interesesUsuario.includes(t));
         const matchFaculty = faculty === 'Todas' || e.faculty === faculty;
         const matchCategory = category === 'Todas' || e.category === category;
         const matchDate = !date || (e.start_date || '').slice(0, 10) <= date;
@@ -77,11 +90,11 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
             (periodo === 'proximos' && !pasado) ||
             (periodo === 'pasados' && pasado);
 
-        return matchSearch && matchFaculty && matchCategory && matchDate && matchPeriodo;
+        return matchSearch && matchFaculty && matchCategory && matchDate && matchPeriodo && matchIntereses;
     });
 
     // Cantidad de filtros aplicados, mostrada en el boton del telefono
-    const filtrosActivos = [faculty !== 'Todas', category !== 'Todas', tipo !== tipoInicial, !!date].filter(Boolean).length;
+    const filtrosActivos = [faculty !== 'Todas', category !== 'Todas', tipo !== tipoInicial, !!date, origen !== 'Todos', misIntereses].filter(Boolean).length;
 
     // Ordenamiento de los resultados
     const fechaOrden = (e) => new Date(e.deadline || e.start_date || 0);
@@ -262,6 +275,14 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
             <FilterSelect label="Tipo" value={tipo} onChange={setTipo} options={soloOportunidades ? TYPES.filter((t) => t !== 'Evento') : TYPES} />
             <FilterSelect label="Facultad" value={faculty} onChange={setFaculty} options={FACULTIES} />
             <FilterSelect label="Categoría" value={category} onChange={setCategory} options={CATEGORIES} />
+            <FilterSelect label="Organiza" value={origen} onChange={setOrigen} options={Object.keys(ORIGENES)} />
+
+            {interesesUsuario.length > 0 && (
+                <label className="pc-filtro" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#3a3a3a', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={misIntereses} onChange={(e) => setMisIntereses(e.target.checked)} style={{ flex: 'none' }} />
+                    Según mis intereses
+                </label>
+            )}
 
             <div className="pc-filtro" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <label style={{ fontSize: 12, color: '#5a5a5a', fontWeight: 500 }}>Fecha</label>
@@ -282,7 +303,7 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
                 />
             </div>
 
-            {(faculty !== 'Todas' || category !== 'Todas' || tipo !== tipoInicial || date || search) && (
+            {(faculty !== 'Todas' || category !== 'Todas' || tipo !== tipoInicial || date || search || origen !== 'Todos' || misIntereses) && (
                 <button
                 onClick={() => {
                     setFaculty('Todas');
@@ -290,6 +311,8 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
                     setTipo(tipoInicial);
                     setDate('');
                     setSearch('');
+                    setOrigen('Todos');
+                    setMisIntereses(false);
                 }}
                 style={{
                     marginLeft: 'auto',
@@ -325,7 +348,7 @@ export default function HomePage({ setCurrentPage, user, facultyFilter, tipoInic
             >
             <div>
                 <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0f1f3d' }}>
-                {search || faculty !== 'Todas' || category !== 'Todas' || tipo !== tipoInicial || date
+                {search || faculty !== 'Todas' || category !== 'Todas' || tipo !== tipoInicial || date || origen !== 'Todos' || misIntereses
                     ? 'Resultados'
                     : soloOportunidades ? 'Todas las oportunidades' : 'Todas las publicaciones'}
                 </h2>

@@ -12,6 +12,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import EventDetailPage from './pages/EventDetailPage';
 import AttendancePage from './pages/AttendancePage';
+import ClubsPage from './pages/ClubsPage';
 import useEsMovil from './hooks/useEsMovil';
 
 // Paginas de gestion que solo se ofrecen en la version web
@@ -103,6 +104,8 @@ export default function App() {
         return <HomePage key="opportunities" setCurrentPage={navigate} user={user} soloOportunidades />;
       case 'faculties':
         return <FacultiesPage setCurrentPage={navigate} />;
+      case 'clubs':
+        return <ClubsPage setCurrentPage={navigate} />;
       case 'calendar':
         return <CalendarPage setCurrentPage={navigate} />;
       case 'event-detail':

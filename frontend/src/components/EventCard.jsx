@@ -125,6 +125,8 @@ export default function EventCard({ event, onSelect, reasons = [], compacto = fa
                 {/* Tags de Facultad y Categoría */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {oportunidad && <Tag destacado>{TIPOS[event.type]}</Tag>}
+                    {event?.club && <Tag destacado>{event.club.acronym || event.club.name}</Tag>}
+                    {event?.external_organizer && <Tag destacado>Externo</Tag>}
                     {event?.faculty && <Tag>{event.faculty}</Tag>}
                     {event?.category && <Tag>{event.category}</Tag>}
                     {Number(event?.price) > 0 && <Tag destacado>${Number(event.price).toFixed(2)}</Tag>}

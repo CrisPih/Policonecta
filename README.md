@@ -36,7 +36,10 @@ Proyecto de la materia Sistemas de la Información, paralelo 2, PAO 2 2026. Prof
 |---|---|
 | Portal centralizado | Eventos, pasantías, becas, investigación y convocatorias en un mismo catálogo. |
 | Carrusel de destacados | Publicaciones patrocinadas por un plan pagado de 7, 15 o 30 días. |
-| Motor de recomendaciones | Ordena las publicaciones según facultad, carrera, intereses, historial de asistencia y fechas límite. |
+| Motor de recomendaciones | Ordena las publicaciones según facultad, carrera, intereses, palabras clave, historial de asistencia y fechas límite. |
+| Clubes | Sección con los clubes estudiantiles (FanPol, CIAP, PhyCom y otros) y sus publicaciones. |
+| Eventos externos | Publicaciones de organizaciones ajenas a la ESPOL, marcadas como "Externo". |
+| Palabras clave e intereses | Cada publicación tiene palabras clave que se comparan con los intereses del participante, que puede escribir intereses propios. |
 | Oportunidades | Sección propia con fecha límite de postulación y enlace externo. |
 | Buscador con filtros | Búsqueda por palabras clave y filtros por tipo, facultad, categoría y fecha. |
 | Inscripciones | Registro en un paso con los datos del perfil, control de cupos y cancelación. |
@@ -183,10 +186,12 @@ Ruta base `/api`. La colección de Postman está en [docs/postman/PoliConecta.po
 |---|---|---|---|
 | `POST` | `/register` | Crear una cuenta | No |
 | `POST` | `/login` | Iniciar sesión | No |
-| `GET` | `/events` | Listar, buscar y filtrar (`search`, `type`, `kind`, `faculty`, `category`, `date`) | No |
+| `GET` | `/events` | Listar, buscar y filtrar (`search`, `type`, `kind`, `origin`, `club_id`, `faculty`, `category`, `date`) | No |
 | `GET` | `/events/featured` | Publicaciones destacadas vigentes | No |
 | `GET` | `/events/conflicts` | Eventos de la misma facultad en el mismo horario | No |
 | `GET` | `/featured-plans` | Planes de publicación destacada | No |
+| `GET` | `/clubs` | Clubes estudiantiles | No |
+| `GET` | `/clubs/{id}` | Club y sus publicaciones | No |
 | `GET` | `/events/{id}/ratings` | Valoraciones de un evento | No |
 | `GET` | `/events/{id}` | Detalle de una publicación | No |
 | `POST` | `/events` | Crear una publicación | Sí |

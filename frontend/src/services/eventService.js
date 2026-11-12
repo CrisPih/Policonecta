@@ -63,6 +63,10 @@ export const eventService = {
       queryParams.append('kind', filters.kind);
     }
 
+    if (filters.origin) {
+      queryParams.append('origin', filters.origin);
+    }
+
     if (filters.user_id) {
       queryParams.append('user_id', filters.user_id);
     }
@@ -80,6 +84,14 @@ export const eventService = {
     const events = data?.events ?? data?.data?.events ?? data?.data ?? data;
     return Array.isArray(events) ? events : [];
   },
+
+  // Clubes estudiantiles
+  getClubs: async () => {
+    const data = await request(`${API_BASE_URL}/clubs`, { headers: getAuthHeaders() });
+    return Array.isArray(data?.clubs) ? data.clubs : [];
+  },
+
+  getClub: async (id) => request(`${API_BASE_URL}/clubs/${id}`, { headers: getAuthHeaders() }),
 
   getFeatured: async () => {
     const data = await request(`${API_BASE_URL}/events/featured`, { headers: getAuthHeaders() });

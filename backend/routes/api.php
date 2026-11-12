@@ -12,6 +12,7 @@ use App\Http\Controllers\RatingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\OrganizerStatsController;
 use App\Http\Controllers\RewardController;
+use App\Http\Controllers\ClubController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,6 +30,10 @@ Route::get('/events/featured', [EventController::class, 'featured']);
 Route::get('/events/conflicts', [EventController::class, 'conflicts']);
 Route::get('/events/{event}', [EventController::class, 'show']);
 Route::get('/events/{event}/ratings', [RatingController::class, 'index']);
+
+// Clubes estudiantiles
+Route::get('/clubs', [ClubController::class, 'index']);
+Route::get('/clubs/{club}', [ClubController::class, 'show']);
 
 // Planes de publicacion destacada
 Route::get('/featured-plans', [PaymentController::class, 'plans']);

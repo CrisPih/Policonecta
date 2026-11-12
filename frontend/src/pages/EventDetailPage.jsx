@@ -315,7 +315,16 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
                                 />
                                 <InfoRow label="Horario" value={formatTime(event.start_time, event.end_time)} />
                                 <InfoRow label="Ubicación" value={event.location} />
-                                <InfoRow label="Organiza" value={event.faculty} />
+                                <InfoRow
+                                    label="Organiza"
+                                    value={
+                                        event.external_organizer
+                                            ? `${event.external_organizer} (organización externa)`
+                                            : event.club
+                                                ? `${event.club.acronym ? `${event.club.acronym} - ` : ''}${event.club.name}`
+                                                : event.faculty
+                                    }
+                                />
                                 {event.deadline && <InfoRow label="Fecha límite" value={fechaLarga(event.deadline)} />}
                                 {event.sponsor && <InfoRow label="Patrocina" value={event.sponsor} />}
                                 {!oportunidad && <InfoRow label="Entrada" value={precio > 0 ? `$${precio.toFixed(2)}` : 'Gratuita'} />}
@@ -344,6 +353,19 @@ export default function EventDetailPage({ eventId, setCurrentPage, user }) {
                             <p style={{ margin: 0, fontSize: 13, color: '#5a5a5a', lineHeight: 1.7, whiteSpace: 'pre-line' }}>
                                 {event.description}
                             </p>
+
+                            {(event.tags ?? []).length > 0 && (
+                                <div style={{ marginTop: 20 }}>
+                                    <h2 style={{ margin: '0 0 8px', fontSize: 14, fontWeight: 700, color: '#0f1f3d' }}>Palabras clave</h2>
+                                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                        {event.tags.map((t) => (
+                                            <span key={t} style={{ border: '1px solid #c3cfe4', color: '#1e40af', borderRadius: 14, padding: '3px 10px', fontSize: 12 }}>
+                                                {t}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 

@@ -40,6 +40,10 @@ class EventController extends Controller
             'deadline'         => ($isOpportunity && !$isDraft ? 'required|date' : 'nullable|date') . '|before:2100-01-01',
             'external_link'    => 'nullable|url|max:500',
             'price'            => 'nullable|numeric|min:0|max:10000',
+            'club_id'          => 'nullable|integer|exists:clubs,id',
+            'external_organizer' => 'nullable|string|max:150',
+            'tags'             => 'nullable|array|max:15',
+            'tags.*'           => 'nullable|string|max:40',
         ];
 
         $validated = $request->validate($rules);
@@ -56,6 +60,7 @@ class EventController extends Controller
 
         $validated['status'] = $request->input('status', 'published');
         $validated['type'] = $validated['type'] ?? 'evento';
+        $validated['tags'] = self::limpiarTags($validated['tags'] ?? null);
 
         if ($request->hasFile('image')) {
             $validated['image'] = ImageStorage::store($request->file('image'));
@@ -85,9 +90,23 @@ class EventController extends Controller
             'user_id'  => 'nullable|integer',
             'type'     => 'nullable|string|in:' . implode(',', Event::TYPES),
             'kind'     => 'nullable|string|in:eventos,oportunidades',
+            'club_id'  => 'nullable|integer',
+            'origin'   => 'nullable|string|in:facultad,club,externo',
         ]);
 
-        $query = Event::query();
+        $query = Event::query()->with('club:id,name,acronym');
+
+        // Quien organiza: facultad o unidad, club estudiantil u organizacion externa
+        if ($request->filled('club_id')) {
+            $query->where('club_id', $request->club_id);
+        }
+        if ($request->origin === 'club') {
+            $query->whereNotNull('club_id');
+        } elseif ($request->origin === 'externo') {
+            $query->whereNotNull('external_organizer');
+        } elseif ($request->origin === 'facultad') {
+            $query->whereNull('club_id')->whereNull('external_organizer');
+        }
 
         // Filtro por tipo de publicacion
         if ($request->filled('type')) {
@@ -111,16 +130,6 @@ class EventController extends Controller
             $query->where('status', 'published');
         }
 
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $like = DB::connection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-
-            $query->where(function ($q) use ($search, $like) {
-                $q->where('title', $like, "%{$search}%")
-                  ->orWhere('description', $like, "%{$search}%");
-            });
-        }
-
         if ($request->filled('category')) {
             $query->where('category', $request->category);
         }
@@ -141,6 +150,23 @@ class EventController extends Controller
             ->orderBy('start_time', 'asc')
             ->get();
 
+        // La busqueda considera titulo, descripcion, palabras clave, club y organizador externo
+        if ($request->filled('search')) {
+            $buscado = mb_strtolower(trim($request->search));
+            $events = $events->filter(function (Event $e) use ($buscado) {
+                $texto = mb_strtolower(implode(' ', array_filter([
+                    $e->title,
+                    $e->description,
+                    implode(' ', $e->tags ?? []),
+                    optional($e->club)->name,
+                    optional($e->club)->acronym,
+                    $e->external_organizer,
+                ])));
+
+                return str_contains($texto, $buscado);
+            })->values();
+        }
+
         // Cada evento incluye sus cupos para mostrarlos en el catalogo -- Cristina Pihuave
         Event::addSpots($events);
 
@@ -157,7 +183,7 @@ class EventController extends Controller
     {
         $today = now()->toDateString();
 
-        $events = Event::query()
+        $events = Event::query()->with('club:id,name,acronym')
             ->where('status', 'published')
             ->where('is_featured', true)
             ->where(function ($q) use ($today) {
@@ -186,7 +212,7 @@ class EventController extends Controller
     // GET /api/events/{id}
     public function show($id)
     {
-        $event = Event::find($id);
+        $event = Event::with('club:id,name,acronym')->find($id);
 
         if (!$event) {
             return response()->json([
@@ -253,6 +279,19 @@ class EventController extends Controller
         ]);
     }
 
+    // Palabras clave sin espacios sobrantes ni repetidas
+    private static function limpiarTags(?array $tags): ?array
+    {
+        $limpias = collect($tags ?? [])
+            ->map(fn ($t) => trim((string) $t))
+            ->filter()
+            ->unique(fn ($t) => mb_strtolower($t))
+            ->values()
+            ->all();
+
+        return $limpias ?: null;
+    }
+
     // Convierte una hora HH:MM en minutos desde la medianoche
     private static function minutos(?string $hora): ?int
     {
@@ -294,7 +333,15 @@ class EventController extends Controller
             'deadline'         => 'sometimes|nullable|date|before:2100-01-01',
             'external_link'    => 'sometimes|nullable|url|max:500',
             'price'            => 'sometimes|nullable|numeric|min:0|max:10000',
+            'club_id'          => 'sometimes|nullable|integer|exists:clubs,id',
+            'external_organizer' => 'sometimes|nullable|string|max:150',
+            'tags'             => 'sometimes|nullable|array|max:15',
+            'tags.*'           => 'nullable|string|max:40',
         ]);
+
+        if (array_key_exists('tags', $validated)) {
+            $validated['tags'] = self::limpiarTags($validated['tags']);
+        }
 
         if ($request->hasFile('image')) {
             $validated['image'] = ImageStorage::store($request->file('image'));

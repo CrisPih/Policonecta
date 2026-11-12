@@ -370,6 +370,96 @@
           }
         },
         {
+          "name": "Solo eventos de clubes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events?origin=club"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Solo eventos externos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events?origin=externo"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Buscar por palabra clave",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events?search=cosplay"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Clubes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clubs"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Club y sus publicaciones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/clubs/1"
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
           "name": "Detalle",
           "request": {
             "method": "GET",
@@ -466,7 +556,57 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Taller de robotica avanzada\",\n  \"description\": \"Taller practico con certificado.\",\n  \"type\": \"evento\",\n  \"category\": \"Taller\",\n  \"modality\": \"Presencial\",\n  \"faculty\": \"FIEC\",\n  \"start_date\": \"2026-12-12\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"13:00\",\n  \"location\": \"Laboratorio de Robotica\",\n  \"max_participants\": 25,\n  \"price\": 12.5\n}",
+              "raw": "{\n  \"title\": \"Taller de robotica avanzada\",\n  \"description\": \"Taller practico con certificado.\",\n  \"type\": \"evento\",\n  \"category\": \"Taller\",\n  \"modality\": \"Presencial\",\n  \"faculty\": \"FIEC\",\n  \"start_date\": \"2026-12-12\",\n  \"start_time\": \"09:00\",\n  \"end_time\": \"13:00\",\n  \"location\": \"Laboratorio de Robotica\",\n  \"max_participants\": 25,\n  \"price\": 12.5,\n  \"club_id\": 4,\n  \"tags\": [\n    \"robotica\",\n    \"arduino\",\n    \"electronica\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const datos = pm.response.json();",
+                  "if (datos.event) { pm.collectionVariables.set('event_id', datos.event.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear evento externo",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/events"
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Meetup de desarrolladores web\",\n  \"description\": \"Charlas cortas de la comunidad.\",\n  \"type\": \"evento\",\n  \"category\": \"Conferencia\",\n  \"modality\": \"Presencial\",\n  \"faculty\": \"FIEC\",\n  \"start_date\": \"2026-12-15\",\n  \"start_time\": \"18:00\",\n  \"end_time\": \"20:00\",\n  \"location\": \"Auditorio FIEC\",\n  \"max_participants\": 100,\n  \"external_organizer\": \"Comunidad Web Guayaquil\",\n  \"tags\": [\n    \"javascript\",\n    \"desarrollo web\"\n  ]\n}",
               "options": {
                 "raw": {
                   "language": "json"

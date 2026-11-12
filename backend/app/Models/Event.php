@@ -34,17 +34,37 @@ class Event extends Model
         'featured_until',
         'sponsor',
         'price',
+        'club_id',
+        'external_organizer',
+        'tags',
     ];
 
     protected $casts = [
         'is_featured' => 'boolean',
         'price' => 'float',
+        'tags' => 'array',
     ];
 
     // Relación con el usuario organizador
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function club()
+    {
+        return $this->belongsTo(Club::class);
+    }
+
+    // Palabras con las que se compara la publicacion con los intereses del usuario
+    public function keywords()
+    {
+        return collect($this->tags ?? [])
+            ->push($this->category, $this->type)
+            ->filter()
+            ->map(fn ($p) => mb_strtolower(trim($p)))
+            ->unique()
+            ->values();
     }
 
     // Inscripciones y control de cupos -- Cristina Pihuave

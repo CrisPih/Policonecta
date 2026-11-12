@@ -19,6 +19,7 @@ export default function Header({
         ['home', 'Inicio'],
         ['opportunities', 'Oportunidades'],
         ['faculties', 'Facultades'],
+        ['clubs', 'Clubes'],
         ['calendar', 'Calendario'],
         ...(isLoggedIn && role === 'user' ? [['my-registrations', 'Mis inscripciones']] : []),
         ...(isLoggedIn && role === 'organizer' ? [['attendance', 'Registro de asistencia']] : []),
@@ -133,6 +134,13 @@ export default function Header({
                 style={navBtnStyle(currentPage === 'faculties')}
             >
                 Facultades
+            </button>
+
+            <button
+                onClick={() => setCurrentPage('clubs')}
+                style={navBtnStyle(currentPage === 'clubs')}
+            >
+                Clubes
             </button>
 
             <button

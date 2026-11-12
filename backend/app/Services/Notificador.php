@@ -22,17 +22,16 @@ class Notificador
             return;
         }
 
-        $categoria = mb_strtolower($event->category ?? '');
+        $palabras = $event->keywords();
 
         User::query()
             ->where('role', 'user')
             ->get()
-            ->filter(function (User $user) use ($event, $categoria) {
-                $intereses = collect($user->interests ?? [])->map(fn ($i) => mb_strtolower($i));
+            ->filter(function (User $user) use ($event, $palabras) {
+                $intereses = collect($user->interests ?? [])->map(fn ($i) => mb_strtolower(trim($i)));
 
                 return ($user->faculty && $user->faculty === $event->faculty)
-                    || $intereses->contains($event->type)
-                    || ($categoria && $intereses->contains($categoria));
+                    || $intereses->intersect($palabras)->isNotEmpty();
             })
             ->each(fn (User $user) => self::crear(
                 $user->id,
